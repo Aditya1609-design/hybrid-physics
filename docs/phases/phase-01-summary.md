@@ -1,6 +1,6 @@
 # Phase 1: Repo foundation
 
-Status: in review. Branch `phase/01-foundation`. Date: 2026-10-25.
+Status: approved 2026-10-25 (tag `phase-01-approved`). Branch `phase/01-foundation`.
 Machine: Apple M1 (4P + 4E cores, 8 GB), macOS 27.0.1, Apple clang 21.0.0, CMake 4.4.4, Ninja 1.13.2.
 
 ## What was built
@@ -52,3 +52,8 @@ cmake --preset release && cmake --build --preset release && ctest --preset relea
 - On the teammate's Mac: clone, run `./scripts/ci.sh`, and check for `CI PASS`.
 - Whether the folder layout and the preset names suit you.
 - Whether 1 MB is the right limit for tracked files (`HP_MAX_TRACKED_KB`).
+
+## Review outcome
+
+- 1 MB tracked-file limit confirmed.
+- From Phase 2 on, every commit must build and pass tests on its own.
