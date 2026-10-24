@@ -1,0 +1,28 @@
+# Build output and dependency cache
+build/
+.cache/
+compile_commands.json
+
+# Generated datasets (only the manifest is tracked)
+data/*
+!data/MANIFEST.md
+
+# Raw benchmark output (summaries and plots in results/ are tracked)
+results/raw/
+
+# Model checkpoints and binary trajectories
+*.pt
+*.pth
+*.onnx
+*.bin
+*.npz
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
