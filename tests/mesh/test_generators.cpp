@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <map>
 #include <stdexcept>
@@ -93,9 +94,41 @@ TEST_CASE("default box and beam have the planned sizes") {
     CHECK(hp::total_volume(beam) == doctest::Approx(2.0 * 0.5 * 0.5).epsilon(1e-5));
 }
 
+TEST_CASE("sphere mesh is valid, conforming, symmetric and converges in volume") {
+    const hp::TetMesh coarse = hp::make_sphere({});
+    CHECK_NOTHROW(coarse.validate());
+    check_conforming(coarse);
+    MESSAGE("default sphere: " << coarse.num_vertices() << " vertices, " << coarse.num_tets()
+                               << " tets");
+    CHECK(coarse.num_vertices() == 823);
+    CHECK(coarse.num_tets() == 2760);
+
+    // Mirror symmetry about the centre: the vertex centroid sits at the centre.
+    hp::SphereParams p;
+    p.center = hp::Vec3(0.25f, -1.0f, 2.0f);
+    const hp::TetMesh shifted = hp::make_sphere(p);
+    hp::Vec3 centroid = hp::Vec3::Zero();
+    for (const hp::Vec3& x : shifted.rest_positions) centroid += x;
+    centroid /= static_cast<float>(shifted.num_vertices());
+    CHECK((centroid - p.center).norm() < 1e-5f);
+
+    const double exact = 4.0 / 3.0 * 3.14159265358979 * 0.125;
+    p = {};
+    p.cells_per_diameter = 10;
+    const double err10 = std::abs(hp::total_volume(hp::make_sphere(p)) - exact) / exact;
+    p.cells_per_diameter = 32;
+    const hp::TetMesh fine = hp::make_sphere(p);
+    CHECK_NOTHROW(fine.validate());
+    const double err32 = std::abs(hp::total_volume(fine) - exact) / exact;
+    MESSAGE("sphere volume error: " << err10 << " at 10 cells, " << err32 << " at 32 cells");
+    CHECK(err10 < 0.08);
+    CHECK(err32 < 0.015);
+}
+
 TEST_CASE("generators are deterministic") {
     CHECK(same_mesh(hp::make_box({}), hp::make_box({})));
     CHECK(same_mesh(hp::make_beam({}), hp::make_beam({})));
+    CHECK(same_mesh(hp::make_sphere({}), hp::make_sphere({})));
 }
 
 TEST_CASE("generators reject invalid parameters") {
@@ -108,6 +141,9 @@ TEST_CASE("generators reject invalid parameters") {
     hp::BeamParams b;
     b.thickness = 0.0f;
     CHECK_THROWS_AS(hp::make_beam(b), std::invalid_argument);
+    hp::SphereParams sp;
+    sp.cells_per_diameter = 0;
+    CHECK_THROWS_AS(hp::make_sphere(sp), std::invalid_argument);
 }
 
 TEST_CASE("validate catches broken meshes") {

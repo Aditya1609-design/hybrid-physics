@@ -126,4 +126,31 @@ TetMesh make_beam(const BeamParams& p) {
     return make_box(box);
 }
 
+TetMesh make_sphere(const SphereParams& p) {
+    require_positive(p.radius, "sphere radius");
+    require_positive(p.cells_per_diameter, "sphere cells_per_diameter");
+
+    CellGrid g;
+    g.nx = g.ny = g.nz = p.cells_per_diameter;
+    const Real h = Real(2) * p.radius / static_cast<Real>(p.cells_per_diameter);
+    g.cell_size = Vec3(h, h, h);
+    g.origin = p.center - Vec3(p.radius, p.radius, p.radius);
+    g.keep.assign(static_cast<size_t>(g.nx) * static_cast<size_t>(g.ny) *
+                      static_cast<size_t>(g.nz),
+                  0);
+
+    // Cell centres measured from the sphere centre in units of h, so the test is exact and
+    // symmetric: the offsets are half-integers and the comparison is done in double.
+    const double half_n = static_cast<double>(p.cells_per_diameter) / 2.0;
+    for (Index k = 0; k < g.nz; ++k)
+        for (Index j = 0; j < g.ny; ++j)
+            for (Index i = 0; i < g.nx; ++i) {
+                const double x = i + 0.5 - half_n, y = j + 0.5 - half_n, z = k + 0.5 - half_n;
+                g.keep[g.cell(i, j, k)] = (x * x + y * y + z * z < half_n * half_n) ? 1 : 0;
+            }
+
+    // The centre cell(s) always pass the test, so the mesh is never empty.
+    return build_from_cells(g);
+}
+
 }  // namespace hp
