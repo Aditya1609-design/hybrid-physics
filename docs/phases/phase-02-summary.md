@@ -1,6 +1,6 @@
 # Phase 2: Core and mesh
 
-Status: in review. Branch `phase/02-core-mesh`.
+Status: approved 2026-10-26 (tag `phase-02-approved`). Branch `phase/02-core-mesh`.
 
 ## What was built
 
@@ -73,3 +73,8 @@ ctest --preset release             # after building
   order) suits the planned Python loader.
 - Whether `make_state` belongs in `scene/` and the default mesh sizes suit you.
 - On the teammate's Mac: `./scripts/ci.sh` shows `CI PASS`.
+
+## Review outcome
+
+- Approved, including the three changes from the plan (`make_state` in `scene/`, sphere default
+  of 10 cells per diameter, `lumped_masses` returning masses).

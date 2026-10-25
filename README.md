@@ -61,7 +61,7 @@ results/    benchmark summaries, plots and tables
 | #  | Phase                                   | Status      |
 |----|-----------------------------------------|-------------|
 | 1  | Repo foundation                         | Approved    |
-| 2  | Core and mesh                           | In review   |
+| 2  | Core and mesh                           | Approved    |
 | 3  | XPBD soft body                          | Not started |
 | 4  | Collisions                              | Not started |
 | 5  | Scenario system                         | Not started |
