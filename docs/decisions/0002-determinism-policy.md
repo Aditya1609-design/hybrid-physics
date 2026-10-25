@@ -16,6 +16,11 @@ rely on this.
 - A test (`tests/core/test_determinism_flags.cpp`) uses inputs where fused and unfused results
   differ, so it fails if the flag is ever lost. It has been checked to fail when the file is
   compiled without the flag.
+- Randomness comes only from `hp::Rng` (PCG32, `engine/include/hp/core/rng.hpp`), seeded
+  explicitly. Its `uniform()` and `normal()` are our own code, because `std::` distributions are
+  implementation-defined and give different numbers on different standard libraries. Sub-tasks
+  get their own generator through `Rng::split(stream)`, which does not depend on call order.
+  Tests pin the reference PCG32 output and golden `uniform`/`normal` values.
 - No wall-clock time, global state or unseeded randomness in physics code. The physics will be
   single-threaded at first; if threads are added, constraint graph coloring keeps the order fixed.
 
@@ -29,5 +34,8 @@ rely on this.
   clang version may produce different (but individually deterministic) results.
   `scripts/machine_info.sh` and `hp::build_info()` record the toolchain so such differences can
   be spotted.
+- `Rng::normal()` calls `std::log` and `std::sqrt`. `sqrt` is exactly rounded everywhere, but
+  `log` comes from the platform maths library, so normal samples could differ in the last bit on
+  another OS. Integer and `uniform()` output is identical everywhere.
 - The `asan` and `debug` presets use different optimization levels. They are for catching bugs,
   not for producing reference numbers.
