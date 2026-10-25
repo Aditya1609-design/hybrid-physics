@@ -8,6 +8,7 @@ add_executable(hp_tests
     core/test_sim_state.cpp
     io/test_obj.cpp
     mesh/test_generators.cpp
+    mesh/test_graph.cpp
     mesh/test_topology.cpp
     scene/test_make_state.cpp)
 

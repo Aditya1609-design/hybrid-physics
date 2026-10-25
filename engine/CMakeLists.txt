@@ -5,6 +5,7 @@ add_library(hp_engine STATIC
     src/core/version.cpp
     src/io/obj.cpp
     src/mesh/generators.cpp
+    src/mesh/graph.cpp
     src/mesh/mass.cpp
     src/mesh/tet_mesh.cpp
     src/mesh/topology.cpp
