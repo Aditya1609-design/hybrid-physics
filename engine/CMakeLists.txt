@@ -1,5 +1,6 @@
 # Headless engine library: no graphics or ML dependencies (enforced by DependencyGuard).
 add_library(hp_engine STATIC
+    src/core/rng.cpp
     src/core/version.cpp)
 add_library(hp::engine ALIAS hp_engine)
 

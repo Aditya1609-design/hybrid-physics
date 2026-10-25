@@ -3,7 +3,8 @@ add_executable(hp_tests
     test_main.cpp
     core/test_version.cpp
     core/test_determinism_flags.cpp
-    core/test_deps.cpp)
+    core/test_deps.cpp
+    core/test_rng.cpp)
 
 target_link_libraries(hp_tests PRIVATE
     hp::engine hp::build_flags doctest::doctest nlohmann_json::nlohmann_json)
