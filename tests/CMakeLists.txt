@@ -5,7 +5,8 @@ add_executable(hp_tests
     core/test_determinism_flags.cpp
     core/test_deps.cpp
     core/test_rng.cpp
-    mesh/test_generators.cpp)
+    mesh/test_generators.cpp
+    mesh/test_topology.cpp)
 
 target_link_libraries(hp_tests PRIVATE
     hp::engine hp::build_flags doctest::doctest nlohmann_json::nlohmann_json)
