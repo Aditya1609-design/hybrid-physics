@@ -5,6 +5,7 @@ add_executable(hp_tests
     core/test_determinism_flags.cpp
     core/test_deps.cpp
     core/test_rng.cpp
+    io/test_obj.cpp
     mesh/test_generators.cpp
     mesh/test_topology.cpp)
 
