@@ -1,11 +1,14 @@
 # Headless engine library: no graphics or ML dependencies (enforced by DependencyGuard).
 add_library(hp_engine STATIC
     src/core/rng.cpp
+    src/core/sim_state.cpp
     src/core/version.cpp
     src/io/obj.cpp
     src/mesh/generators.cpp
+    src/mesh/mass.cpp
     src/mesh/tet_mesh.cpp
-    src/mesh/topology.cpp)
+    src/mesh/topology.cpp
+    src/scene/make_state.cpp)
 add_library(hp::engine ALIAS hp_engine)
 
 target_include_directories(hp_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
