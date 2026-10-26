@@ -9,6 +9,8 @@ add_library(hp_engine STATIC
     src/mesh/mass.cpp
     src/mesh/tet_mesh.cpp
     src/mesh/topology.cpp
+    src/metrics/constraint_error.cpp
+    src/metrics/energy.cpp
     src/scene/make_state.cpp
     src/scene/pin.cpp
     src/solver/solver.cpp

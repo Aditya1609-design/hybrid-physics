@@ -10,6 +10,7 @@ add_executable(hp_tests
     mesh/test_generators.cpp
     mesh/test_graph.cpp
     mesh/test_topology.cpp
+    metrics/test_metrics.cpp
     scene/test_make_state.cpp
     scene/test_pin.cpp
     solver/test_solver.cpp
