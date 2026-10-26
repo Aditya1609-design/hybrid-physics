@@ -18,6 +18,7 @@ add_executable(hp_tests
     solver/test_solver.cpp
     solver/test_xpbd.cpp
     solver/test_xpbd_accuracy.cpp
+    solver/test_xpbd_contact.cpp
     solver/test_xpbd_constraints.cpp)
 
 target_link_libraries(hp_tests PRIVATE

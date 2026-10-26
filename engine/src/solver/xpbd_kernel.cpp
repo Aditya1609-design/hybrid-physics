@@ -7,7 +7,8 @@ namespace hp::detail {
 template <typename S>
 void XpbdKernel<S>::step(const XpbdConstraints& c, std::vector<V3>& x, std::vector<V3>& v,
                          const std::vector<S>& w, S dt, Index substeps, Index iterations,
-                         const V3& gravity, S damping) {
+                         const V3& gravity, S damping,
+                         const std::vector<Collider>& colliders) {
     const size_t n = x.size();
     dx_.resize(n);
     lambda_edge_.resize(c.edges.size());
@@ -29,6 +30,8 @@ void XpbdKernel<S>::step(const XpbdConstraints& c, std::vector<V3>& x, std::vect
         for (Index it = 0; it < iterations; ++it) {
             project_edges(c, x, w, h2);
             project_tets(c, x, w, h2);
+            // Contacts last, so each substep ends with vertices outside the colliders.
+            if (!colliders.empty()) project_contacts(colliders, x, w);
         }
 
         for (size_t i = 0; i < n; ++i) {
@@ -96,6 +99,22 @@ void XpbdKernel<S>::project_tets(const XpbdConstraints& c, const std::vector<V3>
         dx_[i2] += (w[i2] * dlambda) * g2;
         dx_[i3] += (w[i3] * dlambda) * g3;
         lambda_tet_[t] += dlambda;
+    }
+}
+
+// Hard, one-sided contact C = sdf(p) >= 0 against static colliders (infinite mass), so the
+// XPBD update reduces to moving a penetrating vertex out along the collider normal.
+template <typename S>
+void XpbdKernel<S>::project_contacts(const std::vector<Collider>& colliders,
+                                     const std::vector<V3>& x, const std::vector<S>& w) {
+    for (size_t i = 0; i < x.size(); ++i) {
+        if (w[i] == S(0)) continue;
+        for (const Collider& col : colliders) {
+            V3 n;
+            const S d = signed_distance(col, V3(x[i] + dx_[i]), n);
+            if (d >= S(0)) continue;
+            dx_[i] -= d * n;
+        }
     }
 }
 

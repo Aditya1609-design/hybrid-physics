@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+
+#include "hp/collision/collider.hpp"
 #include "hp/core/sim_state.hpp"
 #include "hp/core/types.hpp"
 #include "hp/solver/detail/xpbd_kernel.hpp"
@@ -26,13 +29,18 @@ struct XpbdSettings {
     void validate() const;
 };
 
-// Substepped XPBD ("small steps") with distance and volume constraints. Single-threaded and
-// deterministic: constraints are always projected in the same order.
+// Substepped XPBD ("small steps") with distance and volume constraints and contacts against
+// static colliders. Single-threaded and deterministic: constraints are always projected in the
+// same order.
 class XpbdSolver final : public ISolver {
 public:
     // Throws std::invalid_argument if the material or settings are invalid.
     XpbdSolver(XpbdConstraints constraints, const Material& material,
                const XpbdSettings& settings);
+    // Same, with static colliders that every free vertex is kept out of. Also throws if a
+    // collider is invalid.
+    XpbdSolver(XpbdConstraints constraints, const Material& material,
+               const XpbdSettings& settings, std::vector<Collider> colliders);
 
     // Advances one frame of `dt`. The mask must cover all vertices (mixed ownership comes
     // later); throws std::invalid_argument otherwise, or if dt is not positive, or if the state
@@ -41,10 +49,12 @@ public:
 
     const XpbdConstraints& constraints() const { return constraints_; }
     const XpbdSettings& settings() const { return settings_; }
+    const std::vector<Collider>& colliders() const { return colliders_; }
 
 private:
     XpbdConstraints constraints_;
     XpbdSettings settings_;
+    std::vector<Collider> colliders_;
     Real damping_;
     Index min_vertices_ = 0;  // one more than the largest vertex index used by a constraint
     detail::XpbdKernel<Real> kernel_;

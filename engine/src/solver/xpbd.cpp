@@ -31,9 +31,17 @@ void XpbdSettings::validate() const {
 
 XpbdSolver::XpbdSolver(XpbdConstraints constraints, const Material& material,
                        const XpbdSettings& settings)
-    : constraints_(std::move(constraints)), settings_(settings), damping_(material.damping) {
+    : XpbdSolver(std::move(constraints), material, settings, {}) {}
+
+XpbdSolver::XpbdSolver(XpbdConstraints constraints, const Material& material,
+                       const XpbdSettings& settings, std::vector<Collider> colliders)
+    : constraints_(std::move(constraints)),
+      settings_(settings),
+      colliders_(std::move(colliders)),
+      damping_(material.damping) {
     material.validate();
     settings_.validate();
+    for (const Collider& col : colliders_) col.validate();
     const auto& c = constraints_;
     if (c.edge_rest_length.size() != c.edges.size() ||
         c.edge_compliance.size() != c.edges.size() ||
@@ -57,7 +65,7 @@ void XpbdSolver::step(SimState& state, const RegionMask& mask, Real dt) {
         throw std::invalid_argument("state does not match the solver's constraints");
     }
     kernel_.step(constraints_, state.positions, state.velocities, state.inv_mass, dt,
-                 settings_.substeps, settings_.iterations, settings_.gravity, damping_);
+                 settings_.substeps, settings_.iterations, settings_.gravity, damping_, colliders_);
 }
 
 }  // namespace hp
