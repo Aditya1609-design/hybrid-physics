@@ -104,6 +104,8 @@ void XpbdKernel<S>::project_tets(const XpbdConstraints& c, const std::vector<V3>
 
 // Hard, one-sided contact C = sdf(p) >= 0 against static colliders (infinite mass), so the
 // XPBD update reduces to moving a penetrating vertex out along the collider normal.
+// Positional Coulomb friction then limits the vertex's tangential motion over the substep:
+// it is removed if it is within mu times the push-out (stick), otherwise shortened by that much.
 template <typename S>
 void XpbdKernel<S>::project_contacts(const std::vector<Collider>& colliders,
                                      const std::vector<V3>& x, const std::vector<S>& w) {
@@ -114,6 +116,12 @@ void XpbdKernel<S>::project_contacts(const std::vector<Collider>& colliders,
             const S d = signed_distance(col, V3(x[i] + dx_[i]), n);
             if (d >= S(0)) continue;
             dx_[i] -= d * n;
+
+            const S limit = static_cast<S>(col.friction) * -d;
+            if (limit == S(0)) continue;
+            const V3 tangent = dx_[i] - dx_[i].dot(n) * n;
+            const S slip = tangent.norm();
+            dx_[i] -= slip <= limit ? tangent : V3((limit / slip) * tangent);
         }
     }
 }
