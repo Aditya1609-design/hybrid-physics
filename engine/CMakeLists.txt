@@ -12,6 +12,7 @@ add_library(hp_engine STATIC
     src/mesh/topology.cpp
     src/metrics/constraint_error.cpp
     src/metrics/energy.cpp
+    src/metrics/penetration.cpp
     src/scene/make_state.cpp
     src/scene/pin.cpp
     src/solver/solver.cpp
