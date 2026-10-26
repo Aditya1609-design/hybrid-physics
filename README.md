@@ -41,14 +41,33 @@ To record the machine a result came from:
 HP_MACHINE_LABEL=my-m1 ./scripts/machine_info.sh -o results/<run>/machine_info.json
 ```
 
+## Benchmarks
+
+XPBD frame time for the real-time and reference presets across mesh sizes (release build):
+
+```sh
+./build/release/apps/benchmark/hp_xpbd_speed --quick           # three small meshes, about 10 s
+./build/release/apps/benchmark/hp_xpbd_speed --csv results/raw/xpbd_speed.csv
+```
+
+## Python tools
+
+Python 3.11+ in a local, git-ignored virtual environment:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r ml/requirements.txt
+.venv/bin/python ml/tools/gnn_cost_estimate.py --flops-only    # GNN cost estimate, no PyTorch needed
+```
+
 ## Repository layout
 
 ```
 engine/     headless static library (include/hp/ public headers, src/ by module)
-apps/       viewer, headless_runner, benchmark (added in later phases)
+apps/       benchmark (XPBD speed); viewer and headless_runner in later phases
 tests/      unit and regression tests, mirroring engine/
 scenarios/  JSON scenario files
-ml/         Python training and evaluation code (later phases)
+ml/         Python tools (GNN cost estimate); training and evaluation in later phases
 cmake/      compiler settings, dependency fetching, engine dependency guard
 scripts/    local CI and machine info
 docs/       architecture, design decisions, data format, per-phase summaries
@@ -62,7 +81,7 @@ results/    benchmark summaries, plots and tables
 |----|-----------------------------------------|-------------|
 | 1  | Repo foundation                         | Approved    |
 | 2  | Core and mesh                           | Approved    |
-| 3  | XPBD soft body                          | Not started |
+| 3  | XPBD soft body                          | In review   |
 | 4  | Collisions                              | Not started |
 | 5  | Scenario system                         | Not started |
 | 6  | Viewer                                  | Not started |

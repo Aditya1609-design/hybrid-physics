@@ -31,10 +31,10 @@ This document grows as phases land. Sections marked *(planned)* are placeholders
 |-------------|---------------------------------------------------------|-----------|
 | `core`      | types, RNG, `SimState`, version and build info          | Phase 2   |
 | `mesh`      | tet mesh, generators, topology, masses, graph export    | Phase 2 (partitioner planned) |
-| `solver`    | `ISolver` interface, XPBD, later the GNN solver         | planned   |
+| `solver`    | `ISolver` interface, XPBD, later the GNN solver         | Phase 3 (XPBD) |
 | `collision` | ground plane, sphere and box colliders, contacts        | planned   |
-| `scene`     | `SimState` setup (`make_state`); scenario loading later | Phase 2 (partial) |
-| `metrics`   | energy, constraint error, penetration, timing           | planned   |
+| `scene`     | `SimState` setup (`make_state`, `pin_vertices`); scenario loading later | Phase 2–3 (partial) |
+| `metrics`   | constraint error and energy; penetration and recording later | Phase 3 (partial) |
 | `io`        | surface OBJ writer; trajectory recorder and reader later | Phase 2 (partial) |
 
 ## Mesh and simulation state
@@ -62,12 +62,33 @@ make_box / make_beam / make_sphere --> TetMesh (rest_positions [N,3], tets [T,4]
   positions, velocities, rest positions, inverse mass (0 = pinned), region ID, solver owner and
   body ID, plus contiguous body ranges. `validate()` checks all of it.
 - `core` depends on nothing else in the engine; `mesh` depends on `core`; `scene` and `io` depend
-  on both.
+  on both. `solver` depends on `core` and `mesh`; `metrics` on `core`, `mesh` and the solver's
+  constraint data.
 
-## Solver interface *(planned)*
+## Solver
 
-`ISolver::step(SimState&, const RegionMask&, dt)`, so XPBD and the GNN solver are interchangeable
-per region.
+See `decisions/0005-xpbd-solver.md`.
+
+```
+TetMesh + Topology + Material --> build_constraints --> XpbdConstraints
+                                                      (edges, rest lengths, compliances;
+                                                       tets, rest volumes, compliances)
+                                                              |
+XpbdSettings::realtime() / ::reference() ----------> XpbdSolver : ISolver
+                                                              |
+       SimState --step(state, RegionMask::all(n), kFrameDt)--> SimState
+                                                              |
+                         constraint_error, energy  <----------+
+```
+
+- `ISolver::step(SimState&, const RegionMask&, dt)`, so XPBD and the GNN solver are
+  interchangeable per region. `RegionMask` only supports "all vertices" for now.
+- `XpbdSolver` owns its constraints and scratch arrays; it reads masses from `SimState` and never
+  allocates after the first step. The kernel is a template so the same code can run in double
+  for precision checks.
+- The two presets differ only in substep and iteration counts. Both use the fixed frame step
+  `kFrameDt = 1/60 s`.
+- Timing is measured only in apps (`apps/benchmark/hp_xpbd_speed`), never inside the engine.
 
 ## Graph view for the GNN
 
