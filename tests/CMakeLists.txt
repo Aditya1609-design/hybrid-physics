@@ -11,7 +11,8 @@ add_executable(hp_tests
     mesh/test_graph.cpp
     mesh/test_topology.cpp
     scene/test_make_state.cpp
-    scene/test_pin.cpp)
+    scene/test_pin.cpp
+    solver/test_solver.cpp)
 
 target_link_libraries(hp_tests PRIVATE
     hp::engine hp::build_flags doctest::doctest nlohmann_json::nlohmann_json)
