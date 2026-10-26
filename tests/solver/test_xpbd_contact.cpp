@@ -12,6 +12,7 @@
 #include "hp/metrics/penetration.hpp"
 #include "hp/scene/make_state.hpp"
 #include "hp/scene/pin.hpp"
+#include "hp/solver/detail/xpbd_kernel.hpp"
 #include "hp/solver/xpbd.hpp"
 
 namespace {
@@ -289,5 +290,84 @@ TEST_CASE("bodies slide off a sphere and a rotated box onto the ground") {
             CHECK(std::abs(com.x()) > 0.5f);
             CHECK(p.num_in_contact > 0);
         }
+    }
+}
+
+TEST_CASE("contact with friction never adds energy") {
+    const std::vector<hp::Collider> colliders = {
+        ground(0.5f), hp::Collider::sphere(hp::Vec3(0, 0.5f, 0), 0.5f, 0.5f)};
+    for (const hp::XpbdSettings& settings :
+         {hp::XpbdSettings::realtime(), hp::XpbdSettings::reference()}) {
+        Drop d = make_drop(hp::Vec3(0.1f, 1.6f, 0), 0.0f);
+        hp::XpbdSolver solver = make_solver(d, settings, colliders);
+        const Trace t = simulate(solver, d.state, 120);
+        MESSAGE(settings.substeps << " substeps, friction 0.5: max penetration "
+                                  << t.max_penetration << " m, mechanical energy max/start "
+                                  << t.max_mechanical / t.start_mechanical);
+        CHECK(t.finite);
+        CHECK(t.max_penetration < kMaxPenetration);
+        check_no_energy_gain(t);
+    }
+}
+
+TEST_CASE("contacts are deterministic") {
+    // Several colliders, friction and an off-centre drop, so contacts switch on and off.
+    const std::vector<hp::Collider> colliders = {
+        ground(0.4f), hp::Collider::sphere(hp::Vec3(0, 0.5f, 0), 0.5f, 0.6f),
+        hp::Collider::box(hp::Vec3(0.9f, 0.2f, 0), hp::Vec3(0.2f, 0.2f, 0.6f),
+                          Eigen::AngleAxis<float>(0.5f, hp::Vec3::UnitY()).toRotationMatrix(),
+                          0.3f)};
+    const Drop d = make_drop(hp::Vec3(0.2f, 1.6f, 0.05f), 0.5f);
+    hp::XpbdSolver first = make_solver(d, hp::XpbdSettings::realtime(), colliders);
+    hp::XpbdSolver second = make_solver(d, hp::XpbdSettings::realtime(), colliders);
+    hp::SimState a = d.state, b = d.state, c = d.state;
+    simulate(first, a, 120);
+    simulate(second, b, 120);
+    simulate(first, c, 120);  // reused solver: scratch arrays must not leak between runs
+    CHECK(same_bytes(a.positions, b.positions));
+    CHECK(same_bytes(a.velocities, b.velocities));
+    CHECK(same_bytes(a.positions, c.positions));
+    CHECK(same_bytes(a.velocities, c.velocities));
+}
+
+TEST_CASE("float32 kernel with contacts stays close to the same kernel in double") {
+    const std::vector<hp::Collider> colliders = {
+        ground(0.5f), hp::Collider::sphere(hp::Vec3(0, 0.5f, 0), 0.5f, 0.5f)};
+    for (const hp::XpbdSettings& settings :
+         {hp::XpbdSettings::realtime(), hp::XpbdSettings::reference()}) {
+        Drop d = make_drop(hp::Vec3(0.1f, 1.6f, 0), 0.0f);
+        const hp::XpbdConstraints constraints =
+            hp::build_constraints(d.mesh, hp::build_topology(d.mesh), d.material);
+        using V3d = hp::detail::XpbdKernel<double>::V3;
+        std::vector<V3d> x, v;
+        std::vector<double> w;
+        for (size_t i = 0; i < d.state.positions.size(); ++i) {
+            x.push_back(d.state.positions[i].cast<double>());
+            v.push_back(d.state.velocities[i].cast<double>());
+            w.push_back(d.state.inv_mass[i]);
+        }
+
+        // 45 frames: the body lands on the sphere and starts to slide off it.
+        const int frames = 45;
+        hp::XpbdSolver solver = make_solver(d, settings, colliders);
+        simulate(solver, d.state, frames);
+        hp::detail::XpbdKernel<double> kernel;
+        for (int f = 0; f < frames; ++f) {
+            kernel.step(constraints, x, v, w, static_cast<double>(hp::kFrameDt),
+                        settings.substeps, settings.iterations, settings.gravity.cast<double>(),
+                        static_cast<double>(d.material.damping), colliders);
+        }
+        double dx = 0.0, dv = 0.0, vmax = 0.0;
+        for (size_t i = 0; i < x.size(); ++i) {
+            dx = std::max(dx, (d.state.positions[i].cast<double>() - x[i]).norm());
+            dv = std::max(dv, (d.state.velocities[i].cast<double>() - v[i]).norm());
+            vmax = std::max(vmax, v[i].norm());
+        }
+        MESSAGE(settings.substeps << " substeps: float vs double max position diff / size "
+                                  << dx / kSize << ", max velocity diff " << dv
+                                  << " m/s (max speed " << vmax << ")");
+        // Same bounds as the contact-free precision test.
+        CHECK(dx / kSize < 1e-3);
+        CHECK(dv < 1e-2 * vmax);
     }
 }
