@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(HP_BUILD_TESTS "Build the unit tests" ON)
+option(HP_BUILD_APPS "Build the command-line apps (benchmarks)" ON)
 option(HP_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(HP_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 set(HP_DEPS_CACHE_DIR "${PROJECT_SOURCE_DIR}/.cache/deps" CACHE PATH
@@ -18,6 +19,10 @@ include(Dependencies)
 include(DependencyGuard)
 
 add_subdirectory(engine)
+
+if(HP_BUILD_APPS)
+    add_subdirectory(apps)
+endif()
 
 if(HP_BUILD_TESTS)
     enable_testing()
