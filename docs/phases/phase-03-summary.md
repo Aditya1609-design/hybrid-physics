@@ -1,6 +1,6 @@
 # Phase 3: XPBD soft body
 
-Status: in review. Branch `phase/03-xpbd`.
+Status: approved 2026-10-27 (tag `phase-03-approved`). Branch `phase/03-xpbd`.
 
 ## What was built
 
@@ -120,3 +120,17 @@ python3 -m venv .venv && .venv/bin/python -m pip install -r ml/requirements.txt
 2. **Material range for later scenarios and the dataset.** The real-time preset is accurate only
    for soft materials. Recommendation: cover `Y` from 0.3 to 30 MPa, so the baseline is
    neither trivially right nor hopeless.
+
+## Review outcome
+
+- Approved, including the preset values (real-time 10 × 1, reference 256 × 1) and the changes
+  from the plan listed above.
+- Working direction: near-reference accuracy for less than the reference preset's cost. Small
+  GNNs (for example 64x10 and 64x5) and GNN steps that cover several frames will both be tested.
+  The project plan documents stay unchanged for now; the speed-crossover phase makes the final call.
+- Material range: Young's-like modulus `Y` from 0.3 to 30 MPa for scenarios and the
+  training/validation/test sets. The out-of-distribution test set also gets a few stiffer
+  values, for example 100 MPa.
+- Note for GNN training: start with a quick accuracy test of a small GNN on the simplest scene,
+  before any full training run, to check early that a model of that size can get close to the
+  reference preset.
