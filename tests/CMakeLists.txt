@@ -1,6 +1,7 @@
 # Single test executable; each doctest case is registered with ctest separately.
 add_executable(hp_tests
     test_main.cpp
+    collision/test_collider.cpp
     core/test_version.cpp
     core/test_determinism_flags.cpp
     core/test_deps.cpp

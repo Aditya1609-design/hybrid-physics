@@ -1,5 +1,6 @@
 # Headless engine library: no graphics or ML dependencies (enforced by DependencyGuard).
 add_library(hp_engine STATIC
+    src/collision/collider.cpp
     src/core/rng.cpp
     src/core/sim_state.cpp
     src/core/version.cpp
