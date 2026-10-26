@@ -1,0 +1,18 @@
+{
+  "label": "dev-m1",
+  "timestamp_utc": "2026-10-26T21:44:58Z",
+  "chip": "Apple M1",
+  "arch": "arm64",
+  "cores_total": "8",
+  "cores_performance": "4",
+  "cores_efficiency": "4",
+  "memory_gb": "8",
+  "os": "macOS 27.0.1",
+  "os_build": "26A434",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+  "cmake": "cmake version 4.4.4",
+  "ninja": "1.13.2",
+  "git_commit": "79c6120164cef02df956a6edcbec1d6e1a24d576",
+  "git_branch": "phase/04-collisions",
+  "git_dirty": true
+}

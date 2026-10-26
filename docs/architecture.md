@@ -32,9 +32,9 @@ This document grows as phases land. Sections marked *(planned)* are placeholders
 | `core`      | types, RNG, `SimState`, version and build info          | Phase 2   |
 | `mesh`      | tet mesh, generators, topology, masses, graph export    | Phase 2 (partitioner planned) |
 | `solver`    | `ISolver` interface, XPBD, later the GNN solver         | Phase 3 (XPBD) |
-| `collision` | ground plane, sphere and box colliders, contacts        | planned   |
+| `collision` | plane, sphere and oriented box colliders, signed distance | Phase 4 |
 | `scene`     | `SimState` setup (`make_state`, `pin_vertices`); scenario loading later | Phase 2–3 (partial) |
-| `metrics`   | constraint error and energy; penetration and recording later | Phase 3 (partial) |
+| `metrics`   | constraint error, energy, penetration; recording later  | Phase 3–4 (partial) |
 | `io`        | surface OBJ writer; trajectory recorder and reader later | Phase 2 (partial) |
 
 ## Mesh and simulation state
@@ -62,8 +62,8 @@ make_box / make_beam / make_sphere --> TetMesh (rest_positions [N,3], tets [T,4]
   positions, velocities, rest positions, inverse mass (0 = pinned), region ID, solver owner and
   body ID, plus contiguous body ranges. `validate()` checks all of it.
 - `core` depends on nothing else in the engine; `mesh` depends on `core`; `scene` and `io` depend
-  on both. `solver` depends on `core` and `mesh`; `metrics` on `core`, `mesh` and the solver's
-  constraint data.
+  on both. `collision` depends only on `core`. `solver` depends on `core`, `mesh` and
+  `collision`; `metrics` on `core`, `mesh`, `collision` and the solver's constraint data.
 
 ## Solver
 
@@ -75,10 +75,10 @@ TetMesh + Topology + Material --> build_constraints --> XpbdConstraints
                                                        tets, rest volumes, compliances)
                                                               |
 XpbdSettings::realtime() / ::reference() ----------> XpbdSolver : ISolver
-                                                              |
+std::vector<Collider> (plane, sphere, box) ---------->        |
        SimState --step(state, RegionMask::all(n), kFrameDt)--> SimState
                                                               |
-                         constraint_error, energy  <----------+
+            constraint_error, energy, penetration  <----------+
 ```
 
 - `ISolver::step(SimState&, const RegionMask&, dt)`, so XPBD and the GNN solver are
@@ -86,6 +86,11 @@ XpbdSettings::realtime() / ::reference() ----------> XpbdSolver : ISolver
 - `XpbdSolver` owns its constraints and scratch arrays; it reads masses from `SimState` and never
   allocates after the first step. The kernel is a template so the same code can run in double
   for precision checks.
+- Each Gauss–Seidel iteration projects edges, then tets, then collider contacts (hard,
+  one-sided, with positional Coulomb friction). Contacts go last, so every substep ends with
+  vertices outside the colliders. See `decisions/0006-contacts-and-friction.md`.
+- Colliders are static and live in `collision`, not in the solver, so the GNN solver can read
+  the same list later.
 - The two presets differ only in substep and iteration counts. Both use the fixed frame step
   `kFrameDt = 1/60 s`.
 - Timing is measured only in apps (`apps/benchmark/hp_xpbd_speed`), never inside the engine.

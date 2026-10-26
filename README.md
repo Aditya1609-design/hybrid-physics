@@ -48,6 +48,7 @@ XPBD frame time for the real-time and reference presets across mesh sizes (relea
 ```sh
 ./build/release/apps/benchmark/hp_xpbd_speed --quick           # three small meshes, about 10 s
 ./build/release/apps/benchmark/hp_xpbd_speed --csv results/raw/xpbd_speed.csv
+./build/release/apps/benchmark/hp_xpbd_speed --quick --colliders   # adds rows with 3 colliders
 ```
 
 ## Python tools
@@ -82,7 +83,7 @@ results/    benchmark summaries, plots and tables
 | 1  | Repo foundation                         | Approved    |
 | 2  | Core and mesh                           | Approved    |
 | 3  | XPBD soft body                          | Approved    |
-| 4  | Collisions                              | Not started |
+| 4  | Collisions                              | In review   |
 | 5  | Scenario system                         | Not started |
 | 6  | Viewer                                  | Not started |
 | 7  | Metrics and recording                   | Not started |
