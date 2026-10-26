@@ -11,7 +11,8 @@ add_library(hp_engine STATIC
     src/mesh/topology.cpp
     src/scene/make_state.cpp
     src/scene/pin.cpp
-    src/solver/solver.cpp)
+    src/solver/solver.cpp
+    src/solver/xpbd_constraints.cpp)
 add_library(hp::engine ALIAS hp_engine)
 
 target_include_directories(hp_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
