@@ -1,6 +1,8 @@
 // Times the XPBD presets per frame on box meshes of increasing size and prints a table.
-// Usage: hp_xpbd_speed [--csv out.csv] [--quick]
-//   --quick   only the three smallest meshes (for a fast sanity check)
+// Usage: hp_xpbd_speed [--csv out.csv] [--quick] [--colliders]
+//   --quick      only the three smallest meshes (for a fast sanity check)
+//   --colliders  also time each preset with a ground plane, a sphere and a box, to show the
+//                contact overhead (rows labelled "<preset>+colliders")
 // Timing lives here, in the app; the engine itself never reads a clock.
 
 #include <algorithm>
@@ -33,15 +35,24 @@ void percentiles(std::vector<double> t, double& median, double& p95) {
     p95 = t[std::min(t.size() - 1, (t.size() * 95) / 100)];
 }
 
+// Ground just below the sagging box, a sphere under its free end and a box beside it, so
+// some vertices are in contact while timing.
+std::vector<hp::Collider> benchmark_colliders() {
+    return {hp::Collider::plane(hp::Vec3(0, -0.55f, 0), hp::Vec3::UnitY(), 0.5f),
+            hp::Collider::sphere(hp::Vec3(0.5f, -0.9f, 0), 0.4f, 0.5f),
+            hp::Collider::box(hp::Vec3(0, 0, 1.0f), hp::Vec3(0.5f, 0.5f, 0.3f),
+                              hp::Mat3::Identity(), 0.5f)};
+}
+
 // Unit box pinned on its x = min face, so the constraints are under load while timing.
 Result time_preset(hp::Index cells, const char* name, const hp::XpbdSettings& settings,
-                   int frames) {
+                   int frames, const std::vector<hp::Collider>& colliders) {
     hp::BoxParams params;
     params.cells_x = params.cells_y = params.cells_z = cells;
     const hp::TetMesh mesh = hp::make_box(params);
     const hp::Material material;
     hp::XpbdSolver solver(hp::build_constraints(mesh, hp::build_topology(mesh), material),
-                          material, settings);
+                          material, settings, colliders);
     hp::SimState state = hp::make_state(mesh, material.density);
     hp::pin_vertices(state, [](const hp::Vec3& p) { return p.x() < -0.5f + 1e-4f; });
     const hp::RegionMask mask = hp::RegionMask::all(state.num_vertices());
@@ -68,13 +79,17 @@ Result time_preset(hp::Index cells, const char* name, const hp::XpbdSettings& se
 int main(int argc, char** argv) {
     std::string csv_path;
     bool quick = false;
+    bool with_colliders = false;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--csv") == 0 && i + 1 < argc) {
             csv_path = argv[++i];
         } else if (std::strcmp(argv[i], "--quick") == 0) {
             quick = true;
+        } else if (std::strcmp(argv[i], "--colliders") == 0) {
+            with_colliders = true;
         } else {
-            std::fprintf(stderr, "usage: %s [--csv out.csv] [--quick]\n", argv[0]);
+            std::fprintf(stderr, "usage: %s [--csv out.csv] [--quick] [--colliders]\n",
+                         argv[0]);
             return 2;
         }
     }
@@ -84,7 +99,7 @@ int main(int argc, char** argv) {
     if (quick) cells.resize(3);
 
     std::printf("build: %s\n", hp::build_info());
-    std::printf("%8s %8s %8s %10s %5s %7s %11s %11s %12s %13s\n", "verts", "tets", "edges",
+    std::printf("%8s %8s %8s %20s %5s %7s %11s %11s %12s %13s\n", "verts", "tets", "edges",
                 "preset", "sub", "frames", "median_ms", "p95_ms", "us/substep",
                 "ns/constraint");
 
@@ -94,13 +109,23 @@ int main(int argc, char** argv) {
         // Fewer frames for big meshes so the reference preset finishes in reasonable time.
         const int rt_frames = verts > 20000 ? 60 : 200;
         const int ref_frames = verts > 20000 ? 5 : (verts > 4000 ? 10 : 30);
-        results.push_back(time_preset(c, "realtime", hp::XpbdSettings::realtime(), rt_frames));
-        results.push_back(time_preset(c, "reference", hp::XpbdSettings::reference(), ref_frames));
-        for (size_t k = results.size() - 2; k < results.size(); ++k) {
+        const size_t first = results.size();
+        results.push_back(
+            time_preset(c, "realtime", hp::XpbdSettings::realtime(), rt_frames, {}));
+        results.push_back(
+            time_preset(c, "reference", hp::XpbdSettings::reference(), ref_frames, {}));
+        if (with_colliders) {
+            const std::vector<hp::Collider> colliders = benchmark_colliders();
+            results.push_back(time_preset(c, "realtime+colliders", hp::XpbdSettings::realtime(),
+                                          rt_frames, colliders));
+            results.push_back(time_preset(c, "reference+colliders",
+                                          hp::XpbdSettings::reference(), ref_frames, colliders));
+        }
+        for (size_t k = first; k < results.size(); ++k) {
             const Result& r = results[k];
             const double per_sub_us = 1000.0 * r.median_ms / r.substeps;
             const double per_constraint_ns = 1000.0 * per_sub_us / (r.edges + r.tets);
-            std::printf("%8d %8d %8d %10s %5d %7d %11.3f %11.3f %12.1f %13.2f\n", r.vertices,
+            std::printf("%8d %8d %8d %20s %5d %7d %11.3f %11.3f %12.1f %13.2f\n", r.vertices,
                         r.tets, r.edges, r.preset, r.substeps, r.frames, r.median_ms, r.p95_ms,
                         per_sub_us, per_constraint_ns);
             std::fflush(stdout);
