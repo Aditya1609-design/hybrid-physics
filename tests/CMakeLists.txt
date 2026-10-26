@@ -14,6 +14,7 @@ add_executable(hp_tests
     scene/test_make_state.cpp
     scene/test_pin.cpp
     solver/test_solver.cpp
+    solver/test_xpbd.cpp
     solver/test_xpbd_constraints.cpp)
 
 target_link_libraries(hp_tests PRIVATE
