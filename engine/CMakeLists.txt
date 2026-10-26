@@ -9,7 +9,8 @@ add_library(hp_engine STATIC
     src/mesh/mass.cpp
     src/mesh/tet_mesh.cpp
     src/mesh/topology.cpp
-    src/scene/make_state.cpp)
+    src/scene/make_state.cpp
+    src/scene/pin.cpp)
 add_library(hp::engine ALIAS hp_engine)
 
 target_include_directories(hp_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
