@@ -1,6 +1,6 @@
 # Phase 4: Collisions
 
-Status: in review. Branch `phase/04-collisions`.
+Status: approved 2026-10-27 (tag `phase-04-approved`). Branch `phase/04-collisions`.
 
 ## What was built
 
@@ -114,3 +114,16 @@ Status: in review. Branch `phase/04-collisions`.
    record kinetic, gravitational and elastic energy separately (not just the total), and
    document that elastic energy is meaningful only for converged states (reference preset or at
    rest). This needs no engine change now.
+
+## Review outcome
+
+- Approved.
+- asan CI time: kept as it is, including the reference-preset contact tests.
+- Energy in the metrics and recording phase: record kinetic, gravitational and elastic energy
+  separately, and document that elastic energy is only meaningful near convergence (reference
+  preset, or at rest).
+- Requirements for the scenario loader (Phase 5):
+  - Reject a scenario whose body starts overlapping a collider (any vertex with signed
+    distance < 0), since XPBD would turn the overlap into a large velocity.
+  - Warn when a sphere collider's radius is smaller than about two mesh edge lengths, since
+    vertex-only contact can let it push into faces between vertices.
