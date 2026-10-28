@@ -15,6 +15,7 @@ add_library(hp_engine STATIC
     src/metrics/penetration.cpp
     src/scene/make_state.cpp
     src/scene/pin.cpp
+    src/scene/scenario.cpp
     src/solver/solver.cpp
     src/solver/xpbd.cpp
     src/solver/xpbd_constraints.cpp
@@ -26,6 +27,9 @@ target_include_directories(hp_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # Build flags are PUBLIC so inline engine code compiled in other targets keeps the
 # same floating-point rules.
 target_link_libraries(hp_engine PUBLIC hp::eigen hp::build_flags)
+
+# JSON is only used inside the scenario loader; public headers do not expose it.
+target_link_libraries(hp_engine PRIVATE nlohmann_json::nlohmann_json)
 
 target_compile_definitions(hp_engine PRIVATE
     HP_VERSION_STRING="${PROJECT_VERSION}"
