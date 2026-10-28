@@ -16,6 +16,7 @@ add_library(hp_engine STATIC
     src/scene/make_state.cpp
     src/scene/pin.cpp
     src/scene/scenario.cpp
+    src/scene/scene.cpp
     src/solver/solver.cpp
     src/solver/xpbd.cpp
     src/solver/xpbd_constraints.cpp

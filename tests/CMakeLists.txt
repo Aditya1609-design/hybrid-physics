@@ -16,6 +16,7 @@ add_executable(hp_tests
     scene/test_make_state.cpp
     scene/test_pin.cpp
     scene/test_scenario.cpp
+    scene/test_scene.cpp
     solver/test_solver.cpp
     solver/test_xpbd.cpp
     solver/test_xpbd_accuracy.cpp
