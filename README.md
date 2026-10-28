@@ -97,7 +97,7 @@ results/    benchmark summaries, plots and tables
 | 2  | Core and mesh                           | Approved    |
 | 3  | XPBD soft body                          | Approved    |
 | 4  | Collisions                              | Approved    |
-| 5  | Scenario system                         | In review   |
+| 5  | Scenario system                         | Approved    |
 | 6  | Viewer                                  | Not started |
 | 7  | Metrics and recording                   | Not started |
 | 8  | Engine correctness and API freeze       | Not started |

@@ -106,6 +106,8 @@ phase.
   that moves more than the collider's thickness within one substep skips it. At 20 m/s the
   real-time substep moves 3.3 cm, so sphere and box colliders should be thicker than
   `speed × dt / substeps` plus a margin.
+  *Note (Phase 5): the actual limit is half the thickness per substep, not the full thickness;
+  see ADR 0007.*
 - With several colliders touching one vertex, they are projected in list order. Every
   multi-collider test still stayed within the bound (≤ 6e-8 m), but there is no proof for
   arbitrary overlaps.

@@ -1,6 +1,6 @@
 # Phase 5: Scenario system
 
-Status: in review. Branch `phase/05-scenario-system`.
+Status: approved 2026-10-28 (tag `phase-05-approved`). Branch `phase/05-scenario-system`.
 
 ## What was built
 
@@ -111,3 +111,9 @@ They should match only with the same compiler version (ADR 0002):
 
 1. **ADR 0006 wording on tunnelling** (full vs half thickness). Recommendation: add a one-line
    note to ADR 0006 pointing to ADR 0007, without rewriting it.
+
+## Review outcome
+
+- Approved.
+- ADR 0006: a one-line note now points to ADR 0007 for the half-thickness tunnelling limit;
+  the original text is unchanged.
