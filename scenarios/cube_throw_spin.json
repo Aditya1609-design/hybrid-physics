@@ -1,0 +1,21 @@
+{
+  "format_version": 1,
+  "name": "cube_throw_spin",
+  "seed": 6,
+  "frames": 180,
+  "solver": { "preset": "realtime" },
+  "bodies": [
+    {
+      "mesh": { "type": "box", "size": [0.4, 0.4, 0.4], "cells": [6, 6, 6] },
+      "material": { "density": 1000, "youngs_modulus": 3e7, "bulk_modulus": 3e8 },
+      "position": [-2.0, 1.0, 0],
+      "rotation": { "axis": [1, 0, 1], "angle_deg": 20 },
+      "velocity": [8, -6, 0],
+      "angular_velocity": [0, 3, 6]
+    }
+  ],
+  "colliders": [
+    { "type": "plane", "point": [0, 0, 0], "normal": [0, 1, 0], "friction": 0.6 },
+    { "type": "box", "center": [1.5, 1.0, 0], "half_extents": [0.2, 1.0, 1.5], "friction": 0.6 }
+  ]
+}

@@ -15,6 +15,7 @@ add_executable(hp_tests
     metrics/test_penetration.cpp
     scene/test_make_state.cpp
     scene/test_pin.cpp
+    scene/test_example_scenarios.cpp
     scene/test_scenario.cpp
     scene/test_scene.cpp
     solver/test_solver.cpp
@@ -26,6 +27,9 @@ add_executable(hp_tests
 
 target_link_libraries(hp_tests PRIVATE
     hp::engine hp::build_flags doctest::doctest nlohmann_json::nlohmann_json)
+
+# Lets the example-scenario test find scenarios/ from any build directory.
+target_compile_definitions(hp_tests PRIVATE HP_SCENARIO_DIR="${PROJECT_SOURCE_DIR}/scenarios")
 
 include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
 doctest_discover_tests(hp_tests)

@@ -1,0 +1,18 @@
+{
+  "format_version": 1,
+  "name": "ball_on_sphere",
+  "seed": 4,
+  "frames": 240,
+  "solver": { "preset": "realtime" },
+  "bodies": [
+    {
+      "mesh": { "type": "sphere", "radius": 0.3, "cells_per_diameter": 10 },
+      "material": { "density": 1000, "youngs_modulus": 1e6, "bulk_modulus": 1e7 },
+      "position": [0.1, 1.2, 0]
+    }
+  ],
+  "colliders": [
+    { "type": "sphere", "center": [0, 0.4, 0], "radius": 0.4, "friction": 0.3 },
+    { "type": "plane", "point": [0, 0, 0], "normal": [0, 1, 0], "friction": 0.5 }
+  ]
+}
