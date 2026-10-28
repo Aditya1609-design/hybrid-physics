@@ -41,6 +41,19 @@ To record the machine a result came from:
 HP_MACHINE_LABEL=my-m1 ./scripts/machine_info.sh -o results/<run>/machine_info.json
 ```
 
+## Running a scenario
+
+Scenarios are JSON files in `scenarios/` (format: `docs/scenario_format.md`). The headless
+runner prints energy, constraint error, penetration and step time, and ends with a hash of the
+final state; the same build on the same compiler gives the same hash on every run.
+
+```sh
+./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json
+./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json --preset reference --frames 60
+./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json --csv out.csv --surface-obj final.obj
+./build/release/apps/headless_runner/hp_run my_scenario.json --check     # validate only
+```
+
 ## Benchmarks
 
 XPBD frame time for the real-time and reference presets across mesh sizes (release build):
@@ -65,9 +78,9 @@ python3 -m venv .venv
 
 ```
 engine/     headless static library (include/hp/ public headers, src/ by module)
-apps/       benchmark (XPBD speed); viewer and headless_runner in later phases
+apps/       benchmark (XPBD speed), headless_runner (hp_run); viewer in a later phase
 tests/      unit and regression tests, mirroring engine/
-scenarios/  JSON scenario files
+scenarios/  JSON scenario files (six examples)
 ml/         Python tools (GNN cost estimate); training and evaluation in later phases
 cmake/      compiler settings, dependency fetching, engine dependency guard
 scripts/    local CI and machine info
@@ -84,7 +97,7 @@ results/    benchmark summaries, plots and tables
 | 2  | Core and mesh                           | Approved    |
 | 3  | XPBD soft body                          | Approved    |
 | 4  | Collisions                              | Approved    |
-| 5  | Scenario system                         | Not started |
+| 5  | Scenario system                         | In review   |
 | 6  | Viewer                                  | Not started |
 | 7  | Metrics and recording                   | Not started |
 | 8  | Engine correctness and API freeze       | Not started |

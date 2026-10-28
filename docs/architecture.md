@@ -13,7 +13,7 @@ This document grows as phases land. Sections marked *(planned)* are placeholders
         +-----------------+------------------+-----------------+
         |                 |                  |                 |
    hp_tests        headless_runner        viewer          ML bridge
-   (doctest)         (planned)       (planned, raylib)  (planned, ONNX
+   (doctest)         (hp_run)        (planned, raylib)  (planned, ONNX
                                                          Runtime or custom)
 ```
 
@@ -33,7 +33,7 @@ This document grows as phases land. Sections marked *(planned)* are placeholders
 | `mesh`      | tet mesh, generators, topology, masses, graph export    | Phase 2 (partitioner planned) |
 | `solver`    | `ISolver` interface, XPBD, later the GNN solver         | Phase 3 (XPBD) |
 | `collision` | plane, sphere and oriented box colliders, signed distance | Phase 4 |
-| `scene`     | `SimState` setup (`make_state`, `pin_vertices`); scenario loading later | Phase 2–3 (partial) |
+| `scene`     | `SimState` setup (`make_state`, `pin_vertices`), scenario parsing and `build_scene` | Phase 2–5 |
 | `metrics`   | constraint error, energy, penetration; recording later  | Phase 3–4 (partial) |
 | `io`        | surface OBJ writer; trajectory recorder and reader later | Phase 2 (partial) |
 
@@ -64,6 +64,8 @@ make_box / make_beam / make_sphere --> TetMesh (rest_positions [N,3], tets [T,4]
 - `core` depends on nothing else in the engine; `mesh` depends on `core`; `scene` and `io` depend
   on both. `collision` depends only on `core`. `solver` depends on `core`, `mesh` and
   `collision`; `metrics` on `core`, `mesh`, `collision` and the solver's constraint data.
+  The scenario loader in `scene` also uses `collision` and `solver`, and is the only engine code
+  that includes nlohmann/json.
 
 ## Solver
 
@@ -103,7 +105,28 @@ their reverses second. `senders`/`receivers` form `edge_index [2, 2E]`; `rest_le
 `node_features` writes `[N, 5]` = velocity + one-hot (free, pinned) into a caller buffer. The
 node feature layout is provisional until the GNN phase.
 
+## Scenarios
+
+See `scenario_format.md` and `decisions/0007-scenario-format.md`.
+
+```
+scenario.json --load_scenario--> Scenario (plain struct: mesh params, material, pose,
+                                  velocities, pin boxes, solver settings, colliders, seed)
+                                      |
+                                 build_scene
+       generator -> rotate/place -> make_state -> v + w x r -> pins -> overlap check
+                                      |                                 (throws)
+                                      v
+            Scene { TetMesh, Topology, SimState, XpbdSolver, warnings }
+                                      |
+              hp_run: step, metrics, optional CSV and OBJ, final state hash
+```
+
+- Parsing checks everything that needs no mesh. `build_scene` does the geometric checks:
+  initial overlap with a collider is an error, and small or thin colliders produce warnings.
+- The engine never prints. Warnings go back in `Scene::warnings` for the app to show.
+
 ## Data flow *(planned)*
 
 Scenario JSON -> scene loader -> SimState -> solver step(s) -> metrics + recorder -> trajectory files
--> Python dataset loader.
+-> Python dataset loader. Everything up to the metrics exists; the recorder is still planned.
