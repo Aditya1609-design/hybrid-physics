@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(HP_BUILD_TESTS "Build the unit tests" ON)
 option(HP_BUILD_APPS "Build the command-line apps (benchmarks)" ON)
+option(HP_BUILD_VIEWER "Build the live 3D viewer (needs a desktop OpenGL stack)" ON)
 option(HP_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(HP_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 set(HP_DEPS_CACHE_DIR "${PROJECT_SOURCE_DIR}/.cache/deps" CACHE PATH
@@ -17,6 +18,12 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(CompilerSettings)
 include(Dependencies)
 include(DependencyGuard)
+
+# The viewer's graphics library is written in C, so C is enabled only when it is built.
+if(HP_BUILD_APPS AND HP_BUILD_VIEWER)
+    enable_language(C)
+    include(ViewerDependencies)
+endif()
 
 add_subdirectory(engine)
 
