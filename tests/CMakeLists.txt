@@ -40,6 +40,7 @@ if(TARGET hp_viewer_core)
         viewer/test_collider_shapes.cpp
         viewer/test_colors.cpp
         viewer/test_orbit_camera.cpp
+        viewer/test_sim_driver.cpp
         viewer/test_surface_mesh.cpp)
     target_link_libraries(hp_tests PRIVATE hp_viewer_core)
 endif()
