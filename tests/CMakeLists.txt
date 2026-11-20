@@ -1,3 +1,9 @@
+# Drop repeated static libraries from link lines (the engine arrives directly and through
+# the viewer core); otherwise Apple's linker warns about duplicates. CMake 3.29 and later.
+if(POLICY CMP0156)
+    cmake_policy(SET CMP0156 NEW)
+endif()
+
 # Single test executable; each doctest case is registered with ctest separately.
 add_executable(hp_tests
     test_main.cpp
@@ -27,6 +33,16 @@ add_executable(hp_tests
 
 target_link_libraries(hp_tests PRIVATE
     hp::engine hp::build_flags doctest::doctest nlohmann_json::nlohmann_json)
+
+# Viewer logic tests, only when the viewer is part of the build.
+if(TARGET hp_viewer_core)
+    target_sources(hp_tests PRIVATE
+        viewer/test_collider_shapes.cpp
+        viewer/test_colors.cpp
+        viewer/test_orbit_camera.cpp
+        viewer/test_surface_mesh.cpp)
+    target_link_libraries(hp_tests PRIVATE hp_viewer_core)
+endif()
 
 # Lets the example-scenario test find scenarios/ from any build directory.
 target_compile_definitions(hp_tests PRIVATE HP_SCENARIO_DIR="${PROJECT_SOURCE_DIR}/scenarios")
