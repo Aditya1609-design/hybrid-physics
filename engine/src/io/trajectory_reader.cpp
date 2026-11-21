@@ -1,4 +1,5 @@
 #include <cstring>
+#include <limits>
 #include <stdexcept>
 
 #include <nlohmann/json.hpp>
@@ -33,13 +34,24 @@ std::vector<std::uint64_t> resolve(const json& table, const std::vector<FieldSpe
             found->at("shape").get<std::vector<std::int64_t>>() != e.shape) {
             fail(path, std::string(what) + " field '" + e.name + "' has an unexpected type");
         }
+        // Written as two comparisons so a huge offset cannot wrap around and pass.
         const auto off = found->at("offset").get<std::uint64_t>();
-        if (off + e.bytes() > limit) {
+        if (off > limit || e.bytes() > limit - off) {
             fail(path, std::string(what) + " field '" + e.name + "' runs past its block");
         }
         offsets.push_back(off);
     }
     return offsets;
+}
+
+// Reads one header count. Counts must be non-negative and fit the int32 indices used by the
+// arrays, which also keeps every array size far from overflowing 64 bits.
+std::int64_t read_count(const json& counts, const char* key, const std::string& path) {
+    const auto value = counts.at(key).get<std::int64_t>();
+    if (value < 0 || value > std::numeric_limits<Index>::max()) {
+        fail(path, std::string("header count '") + key + "' is negative or too large");
+    }
+    return value;
 }
 
 // Vec3 is three packed floats (checked in types.hpp), so raw copies are safe; the void*
@@ -88,10 +100,10 @@ TrajectoryReader::TrajectoryReader(const std::string& path) : in_(path, std::ios
     try {
         h = json::parse(header_json_);
         const json& counts = h.at("counts");
-        num_vertices_ = counts.at("vertices").get<Index>();
-        const auto edges = counts.at("edges").get<std::int64_t>();
-        const auto tets = counts.at("tets").get<std::int64_t>();
-        const auto tris = counts.at("surface_triangles").get<std::int64_t>();
+        num_vertices_ = static_cast<Index>(read_count(counts, "vertices", path));
+        const auto edges = read_count(counts, "edges", path);
+        const auto tets = read_count(counts, "tets", path);
+        const auto tris = read_count(counts, "surface_triangles", path);
 
         std::uint64_t record_size = 0;
         offsets_ = resolve(h.at("frame_layout"), detail::frame_fields(num_vertices_, record_size),

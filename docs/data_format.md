@@ -90,6 +90,11 @@ files are ignored. It does not see edits made after the binary was built.
 are relative to the start of each record. Readers should build their types from these tables
 instead of hard-coding offsets; the tables below are what version 1 writes.
 
+Readers must not trust these tables blindly. Both readers reject a file whose `counts` are
+negative or above 2^31 - 1, whose offsets or shape dimensions are negative, whose arrays sized by
+a count have a different shape, or whose field would end past its block. The bounds check is
+written as `offset > limit || size > limit - offset` so a huge offset cannot wrap around.
+
 ### Static block
 
 Each array starts on a 64-byte boundary inside the block.

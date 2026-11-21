@@ -62,6 +62,37 @@ def _check_fields(table, required, what):
             raise TrajectoryError(f"{what} field '{name}' is {found[name]}, expected {dtype}")
 
 
+# First dimensions of each static array, as header count names (the second, if any, is fixed).
+STATIC_SHAPES = {
+    "rest_positions": ("vertices", 3), "inv_mass": ("vertices",), "region_id": ("vertices",),
+    "body_id": ("vertices",), "edges": ("edges", 2), "edge_rest_length": ("edges",),
+    "edge_compliance": ("edges",), "tets": ("tets", 4), "tet_rest_volume": ("tets",),
+    "tet_compliance": ("tets",), "surface_triangles": ("surface_triangles", 3),
+}
+FRAME_SHAPES = {"positions": ("vertices", 3), "velocities": ("vertices", 3),
+                "solver_owner": ("vertices",)}
+INT32_MAX = 2**31 - 1
+
+
+def _is_count(x):
+    return isinstance(x, int) and not isinstance(x, bool) and 0 <= x <= INT32_MAX
+
+
+def _check_layout(table, expected, counts, what):
+    """Rejects negative or non-integer offsets and shapes, and requires the arrays sized by
+    the header counts to have exactly those sizes."""
+    for f in table:
+        if not (isinstance(f["offset"], int) and f["offset"] >= 0):
+            raise TrajectoryError(f"{what} field '{f['name']}' has a bad offset")
+        if not all(isinstance(d, int) and d >= 0 for d in f["shape"]):
+            raise TrajectoryError(f"{what} field '{f['name']}' has a negative or bad shape")
+        if f["name"] in expected:
+            want = [counts[d] if isinstance(d, str) else d for d in expected[f["name"]]]
+            if list(f["shape"]) != want:
+                raise TrajectoryError(f"{what} field '{f['name']}' has shape {f['shape']}, "
+                                      f"expected {want} from the header counts")
+
+
 def _layout_dtype(table, itemsize):
     """numpy structured dtype built from a header layout table (unknown fields included)."""
     return np.dtype({
@@ -166,6 +197,12 @@ def load(path, warn=True):
 
     _check_fields(header["frame_layout"], REQUIRED_FRAME_FIELDS, "frame_layout")
     _check_fields(header["static_layout"], REQUIRED_STATIC_FIELDS, "static_layout")
+    counts = header["counts"]
+    for key in ("vertices", "edges", "tets", "surface_triangles"):
+        if not _is_count(counts.get(key)):
+            raise TrajectoryError(f"{path}: header count '{key}' is negative or bad")
+    _check_layout(header["frame_layout"], FRAME_SHAPES, counts, "frame_layout")
+    _check_layout(header["static_layout"], STATIC_SHAPES, counts, "static_layout")
     record = _layout_dtype(header["frame_layout"], frame_size)
 
     static = {}

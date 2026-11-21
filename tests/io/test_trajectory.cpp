@@ -2,11 +2,14 @@
 
 #include <cstring>
 #include <filesystem>
+#include <initializer_list>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <nlohmann/json.hpp>
 
 #include "hp/io/trajectory.hpp"
 #include "hp/metrics/frame_metrics.hpp"
@@ -192,6 +195,92 @@ TEST_CASE("trajectory reader rejects files that are not trajectories") {
     CHECK_THROWS_AS(hp::TrajectoryReader{path}, std::runtime_error);
     CHECK_THROWS_AS(hp::TrajectoryReader{temp_path("hp_test_missing.hptraj")},
                     std::runtime_error);
+    fs::remove(path);
+}
+
+namespace {
+
+// Rewrites the JSON header of a recorded file with `edit` applied, keeping its length (compact
+// JSON padded with spaces), so the preamble and every block offset stay valid.
+template <typename Edit>
+void edit_header(const std::string& path, Edit edit) {
+    std::string bytes = read_text(path);
+    std::uint32_t header_len = 0;
+    std::memcpy(&header_len, bytes.data() + 12, sizeof(header_len));
+    nlohmann::json h = nlohmann::json::parse(bytes.substr(64, header_len));
+    edit(h);
+    std::string text = h.dump();
+    REQUIRE(text.size() <= header_len);
+    text.resize(header_len, ' ');
+    bytes.replace(64, header_len, text);
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out << bytes;
+}
+
+// Sets `count` in the header and the first dimension of every static array sized by it.
+void set_count(nlohmann::json& h, const char* count, std::int64_t value,
+               std::initializer_list<const char*> arrays) {
+    h["counts"][count] = value;
+    for (auto& field : h["static_layout"]) {
+        for (const char* name : arrays) {
+            if (field["name"] == name) field["shape"][0] = value;
+        }
+    }
+    if (std::string(count) == "vertices") {
+        for (auto& field : h["frame_layout"]) {
+            if (!field["shape"].empty()) field["shape"][0] = value;
+        }
+    }
+}
+
+void set_offset(nlohmann::json& h, const char* table, const char* name, nlohmann::json value) {
+    for (auto& field : h[table]) {
+        if (field["name"] == name) field["offset"] = value;
+    }
+}
+
+}  // namespace
+
+TEST_CASE("trajectory reader rejects corrupt header layouts with runtime_error") {
+    const std::string path = temp_path("hp_test_corrupt_layout.hptraj");
+    record(path, 1);
+    // The unedited file must open, so the failures below come from the edits alone.
+    edit_header(path, [](nlohmann::json&) {});
+    CHECK_NOTHROW(hp::TrajectoryReader{path});
+
+    SUBCASE("static offset that would wrap around 2^64") {
+        edit_header(path, [](nlohmann::json& h) {
+            set_offset(h, "static_layout", "rest_positions", 18446744073709551600ull);
+        });
+    }
+    SUBCASE("frame offset that would wrap around 2^64") {
+        edit_header(path, [](nlohmann::json& h) {
+            set_offset(h, "frame_layout", "positions", 18446744073709551600ull);
+        });
+    }
+    SUBCASE("negative offset") {
+        edit_header(path, [](nlohmann::json& h) {
+            set_offset(h, "static_layout", "edges", -64);
+        });
+    }
+    SUBCASE("negative edge count and shapes") {
+        edit_header(path, [](nlohmann::json& h) {
+            set_count(h, "edges", -1, {"edges", "edge_rest_length", "edge_compliance"});
+        });
+    }
+    SUBCASE("negative vertex count and shapes") {
+        edit_header(path, [](nlohmann::json& h) {
+            set_count(h, "vertices", -1,
+                      {"rest_positions", "inv_mass", "region_id", "body_id"});
+        });
+    }
+    SUBCASE("count beyond the int32 index range") {
+        edit_header(path, [](nlohmann::json& h) {
+            set_count(h, "tets", std::int64_t{1} << 40,
+                      {"tets", "tet_rest_volume", "tet_compliance"});
+        });
+    }
+    CHECK_THROWS_AS(hp::TrajectoryReader{path}, std::runtime_error);
     fs::remove(path);
 }
 

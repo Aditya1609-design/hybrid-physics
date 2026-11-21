@@ -8,7 +8,9 @@ the engine computed:
   4. kinetic, gravitational and elastic energy recomputed in numpy match the recorded values;
   5. graph and training-pair helpers return the expected shapes and data;
   6. a second recording of the same run is identical apart from step times and timestamp;
-  7. the plain-numpy example in docs/data_format.md reads the same positions.
+  7. the plain-numpy example in docs/data_format.md reads the same positions;
+  8. copies with a corrupt header (wrapping or negative offsets, negative or oversized counts)
+     are rejected with TrajectoryError.
 
 Usage:
   python ml/tools/check_trajectory.py --hp-run build/release/apps/headless_runner/hp_run \
@@ -28,7 +30,7 @@ import tempfile
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from data.trajectory import energies, load, state_hash  # noqa: E402
+from data.trajectory import TrajectoryError, energies, load, state_hash  # noqa: E402
 
 # Relative tolerance for numpy vs engine energies. Both sum in float64 from the same float32
 # data; only the summation order differs.
@@ -187,6 +189,67 @@ def check_doc_example(c, path, traj):
              f"positions {x.shape} identical")
 
 
+def write_with_header(src, dst, edit):
+    """Copies src to dst with `edit` applied to the JSON header, keeping its length (compact
+    JSON padded with spaces) so every offset in the preamble stays valid."""
+    raw = bytearray(open(src, "rb").read())
+    header_len = int(np.frombuffer(bytes(raw[12:16]), "<u4")[0])
+    header = json.loads(bytes(raw[64:64 + header_len]))
+    edit(header)
+    text = json.dumps(header, separators=(",", ":")).encode()
+    assert len(text) <= header_len
+    raw[64:64 + header_len] = text + b" " * (header_len - len(text))
+    open(dst, "wb").write(raw)
+
+
+def check_corrupt_headers(c, path, tmp):
+    def set_offset(table, name, value):
+        def edit(h):
+            for f in h[table]:
+                if f["name"] == name:
+                    f["offset"] = value
+        return edit
+
+    def set_count(count, value, arrays):
+        def edit(h):
+            h["counts"][count] = value
+            for f in h["static_layout"]:
+                if f["name"] in arrays:
+                    f["shape"][0] = value
+            if count == "vertices":
+                for f in h["frame_layout"]:
+                    if f["shape"]:
+                        f["shape"][0] = value
+        return edit
+
+    cases = {
+        "static offset wrapping 2^64": set_offset("static_layout", "rest_positions", 2**64 - 16),
+        "negative static offset": set_offset("static_layout", "edges", -64),
+        "negative frame offset": set_offset("frame_layout", "positions", -8),
+        "negative edge count": set_count("edges", -1,
+                                         {"edges", "edge_rest_length", "edge_compliance"}),
+        "negative vertex count": set_count("vertices", -1,
+                                           {"rest_positions", "inv_mass", "region_id", "body_id"}),
+        "count beyond int32": set_count("tets", 2**40,
+                                        {"tets", "tet_rest_volume", "tet_compliance"}),
+        "shape disagreeing with counts": set_count("edges", 7, {"edges"}),
+    }
+    dst = os.path.join(tmp, "corrupt.hptraj")
+    write_with_header(path, dst, lambda h: None)
+    ok = load(dst) is not None  # the unedited copy must still open
+    missed = []
+    for name, edit in cases.items():
+        write_with_header(path, dst, edit)
+        try:
+            load(dst)
+            missed.append(name)
+        except TrajectoryError:
+            pass
+    c.report(ok and not missed, "corrupt headers rejected",
+             f"{len(cases) - len(missed)}/{len(cases)} rejected with TrajectoryError"
+             + (f"; accepted: {', '.join(missed)}" if missed else ""))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--hp-run", required=True, help="path to the hp_run executable")
@@ -212,6 +275,7 @@ def main():
         check_helpers(c, traj, min(args.k, traj.num_frames - 1))
         check_determinism(c, path_a, path_b)
         check_doc_example(c, path_a, traj)
+        check_corrupt_headers(c, path_a, tmp)
         del traj  # release the memory map before the directory is removed
 
     print("ALL CHECKS PASSED" if c.failed == 0 else f"{c.failed} CHECK(S) FAILED")
