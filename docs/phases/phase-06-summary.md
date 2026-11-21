@@ -1,6 +1,6 @@
 # Phase 6: Viewer
 
-Status: in review. Branch `phase/06-viewer`.
+Status: approved 2026-11-21 (tag `phase-06-approved`). Branch `phase/06-viewer`.
 
 ## What was built
 
@@ -128,3 +128,12 @@ opens a window (see decision 2).
    phase review rather than on every commit.
 3. **Teammate's OS.** If it is Linux, raylib needs the X11 and OpenGL dev packages, or the
    build can use `-DHP_BUILD_VIEWER=OFF`. Tell me which, and I will document the packages.
+
+## Review outcome
+
+- Approved.
+- Black strip: not visible in the live window, so it only affects screenshot readback. No code
+  change.
+- Viewer smoke run: added as the opt-in `ci.sh --with-viewer` (every scenario, 30 frames, release
+  and asan viewers, final hash compared with `hp_run`). It passed before the merge.
+- Teammate's machine is macOS (M4), so no Linux packages are documented.

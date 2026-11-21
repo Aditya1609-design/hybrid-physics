@@ -35,6 +35,7 @@ Full local CI (release + asan, warnings as errors, tracked-file checks):
 
 ```sh
 ./scripts/ci.sh            # add --clean for a fresh build, --with-debug to add the debug preset
+./scripts/ci.sh --with-viewer   # also opens the viewer on every scenario (before a review)
 ```
 
 To record the machine a result came from:
@@ -116,7 +117,7 @@ results/    benchmark summaries, plots and tables
 | 3  | XPBD soft body                          | Approved    |
 | 4  | Collisions                              | Approved    |
 | 5  | Scenario system                         | Approved    |
-| 6  | Viewer                                  | In review   |
+| 6  | Viewer                                  | Approved    |
 | 7  | Metrics and recording                   | Not started |
 | 8  | Engine correctness and API freeze       | Not started |
 | 9  | Regions and solver interface            | Not started |

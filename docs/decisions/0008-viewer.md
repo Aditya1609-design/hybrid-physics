@@ -57,9 +57,10 @@ Without touching the engine, and without changing what the simulation computes.
   headers first, and the class gets two layouts. AddressSanitizer caught this during the phase.
 - `--screenshot` reads the frame back before the buffer swap. On this machine about half of the
   readbacks have the rightmost 112 pixels black even though the viewport covers the whole
-  framebuffer; this looks like an OpenGL-on-Metal readback quirk. Whether the live window shows
-  it has not been confirmed.
+  framebuffer; this looks like an OpenGL-on-Metal readback quirk. The live window does not show
+  it (checked in the Phase 6 review).
 - Linux would need the X11 and OpenGL development packages for raylib; configure with
   `-DHP_BUILD_VIEWER=OFF` where they are missing.
 - The viewer is not exercised by `ctest`: it needs a window. Its logic is, through
-  `hp_viewer_core`.
+  `hp_viewer_core`, and `ci.sh --with-viewer` runs the app itself on every scenario in the
+  release and asan builds.
