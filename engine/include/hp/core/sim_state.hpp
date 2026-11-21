@@ -32,4 +32,8 @@ struct SimState {
     void validate() const;
 };
 
+// True if every position and velocity component is finite. A solver that blows up produces
+// inf or NaN, so runners check this after each step.
+bool all_finite(const SimState& state);
+
 }  // namespace hp

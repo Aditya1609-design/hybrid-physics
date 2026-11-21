@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "hp/core/sim_state.hpp"
 #include "hp/core/state_hash.hpp"
 #include "hp/io/obj.hpp"
 #include "hp/io/trajectory.hpp"
@@ -100,13 +101,6 @@ bool parse_args(int argc, char** argv, Options& o) {
 std::string read_file(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
     return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
-}
-
-bool all_finite(const hp::SimState& s) {
-    for (size_t v = 0; v < s.positions.size(); ++v) {
-        if (!s.positions[v].allFinite() || !s.velocities[v].allFinite()) return false;
-    }
-    return true;
 }
 
 // One frame's metrics, as printed and written to the CSV.
@@ -262,7 +256,7 @@ int main(int argc, char** argv) {
         scene.solver.step(scene.state, mask, hp::kFrameDt);
         const auto t1 = std::chrono::steady_clock::now();
         step_ms.push_back(std::chrono::duration<double, std::milli>(t1 - t0).count());
-        if (!all_finite(scene.state)) {
+        if (!hp::all_finite(scene.state)) {
             // The non-finite frame is not recorded; the file ends with the last valid one.
             std::fprintf(stderr, "error: state became non-finite at frame %ld\n", f);
             status = 3;

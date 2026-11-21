@@ -4,6 +4,7 @@
 #include <chrono>
 #include <utility>
 
+#include "hp/core/sim_state.hpp"
 #include "hp/core/state_hash.hpp"
 #include "hp/solver/xpbd.hpp"
 
@@ -26,17 +27,6 @@ void FixedStepPacer::reset() {
     accumulator_ = 0.0;
     behind_ = false;
 }
-
-namespace {
-
-bool all_finite(const SimState& s) {
-    for (size_t v = 0; v < s.positions.size(); ++v) {
-        if (!s.positions[v].allFinite() || !s.velocities[v].allFinite()) return false;
-    }
-    return true;
-}
-
-}  // namespace
 
 SimDriver::SimDriver(Scenario scenario)
     : scenario_(std::move(scenario)), pacer_(static_cast<double>(kFrameDt)) {

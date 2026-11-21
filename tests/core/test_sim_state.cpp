@@ -28,6 +28,18 @@ TEST_CASE("simstate accepts a consistent multi-body state") {
     CHECK_NOTHROW(two_body_state().validate());
 }
 
+TEST_CASE("all_finite flags inf and NaN in positions or velocities") {
+    hp::SimState s = two_body_state();
+    CHECK(hp::all_finite(s));
+    hp::SimState bad = s;
+    bad.positions[4].y() = std::numeric_limits<float>::infinity();
+    CHECK_FALSE(hp::all_finite(bad));
+    bad = s;
+    bad.velocities[0].z() = std::numeric_limits<float>::quiet_NaN();
+    CHECK_FALSE(hp::all_finite(bad));
+    CHECK(hp::all_finite(hp::SimState{}));
+}
+
 TEST_CASE("simstate rejects inconsistent states") {
     hp::SimState s = two_body_state();
     s.region_id.pop_back();

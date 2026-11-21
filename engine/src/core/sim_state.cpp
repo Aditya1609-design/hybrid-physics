@@ -44,4 +44,14 @@ void SimState::validate() const {
     }
 }
 
+bool all_finite(const SimState& state) {
+    for (const Vec3& x : state.positions) {
+        if (!x.allFinite()) return false;
+    }
+    for (const Vec3& v : state.velocities) {
+        if (!v.allFinite()) return false;
+    }
+    return true;
+}
+
 }  // namespace hp
