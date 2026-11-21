@@ -1,6 +1,6 @@
 # Phase 7: Metrics and recording
 
-Status: in review (2026-11-21). Branch `phase/07-metrics-recording`.
+Status: approved 2026-11-21 (tag `phase-07-approved`). Branch `phase/07-metrics-recording`.
 
 ## What was built
 
@@ -125,3 +125,10 @@ plan was wrong). Recording costs about 4% of run time on `cube_drop` realtime (6
    from Phase 5.
 2. **Recording from the viewer.** Recommendation: not now; datasets come from `hp_run` (Phase 10
    runs headless). Can be added later behind the same `IRecorder`.
+
+## Review outcome
+
+- Approved.
+- CSV tolerance: kept at half a unit in the last printed digit per column; hp_run's CSV output
+  is unchanged.
+- Viewer recording: not added; datasets are recorded with `hp_run`.

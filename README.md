@@ -138,7 +138,7 @@ results/    benchmark summaries, plots and tables
 | 4  | Collisions                              | Approved    |
 | 5  | Scenario system                         | Approved    |
 | 6  | Viewer                                  | Approved    |
-| 7  | Metrics and recording                   | In review   |
+| 7  | Metrics and recording                   | Approved    |
 | 8  | Engine correctness and API freeze       | Not started |
 | 9  | Regions and solver interface            | Not started |
 | 10 | Dataset generation                      | Not started |
