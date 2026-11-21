@@ -1,4 +1,21 @@
 # Headless engine library: no graphics or ML dependencies (enforced by DependencyGuard).
+
+# The git commit is written into a generated source on every build, so recordings always name
+# the commit their binary was built from. The file only changes when the commit or dirty flag
+# does, so this costs no recompilation otherwise.
+find_package(Git QUIET)
+set(HP_GIT_INFO_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/generated/git_info.cpp)
+set(_hp_git_info_cmd ${CMAKE_COMMAND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+    -DSRC_DIR=${PROJECT_SOURCE_DIR} -DOUT=${HP_GIT_INFO_SOURCE}
+    -P ${PROJECT_SOURCE_DIR}/cmake/GitInfo.cmake)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
+execute_process(COMMAND ${_hp_git_info_cmd})  # so the file exists before the first build
+add_custom_target(hp_git_info
+    COMMAND ${_hp_git_info_cmd}
+    BYPRODUCTS ${HP_GIT_INFO_SOURCE}
+    COMMENT "Updating git commit info"
+    VERBATIM)
+
 add_library(hp_engine STATIC
     src/collision/collider.cpp
     src/core/rng.cpp
@@ -20,8 +37,10 @@ add_library(hp_engine STATIC
     src/solver/solver.cpp
     src/solver/xpbd.cpp
     src/solver/xpbd_constraints.cpp
-    src/solver/xpbd_kernel.cpp)
+    src/solver/xpbd_kernel.cpp
+    ${HP_GIT_INFO_SOURCE})
 add_library(hp::engine ALIAS hp_engine)
+add_dependencies(hp_engine hp_git_info)
 
 target_include_directories(hp_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
