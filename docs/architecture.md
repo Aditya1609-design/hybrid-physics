@@ -177,6 +177,25 @@ Scene --step--> SimState --measure_frame--> FrameMetrics {energy, error, penetra
 - Frame 0 is the initial state. A run that ends non-finite stops at the last valid frame with
   status 3; a crashed run leaves an "unfinished" file that readers can still open.
 
+## Public API and regression tests
+
+See `api.md` and `decisions/0010-api-freeze.md`.
+
+- The public API is `engine/include/hp/`. `api.md` marks each header frozen, provisional
+  (`solver.hpp` and `scene.hpp` until Phase 9, graph node features until Phase 11) or internal
+  (`hp/solver/detail/`). Frozen headers accept additive changes only; anything else is an
+  explicit change request.
+- `tests/regression/golden.json` pins the physics: for each scenario on both presets, a
+  fingerprint of the mesh, constraint and graph data, state hashes at fixed frames, and the final
+  metrics. The `hp_tests` golden cases compare hashes exactly.
+
+```
+scenarios/*.json --golden::compute--> {fingerprint, hashes at frames, final metrics}
+                                              |
+              test_golden.cpp  <-- compare -- tests/regression/golden.json
+              hp_golden --write  -- rewrite after an approved physics change -->
+```
+
 ## Data flow
 
 Scenario JSON -> scene loader -> SimState -> solver step(s) -> metrics + recorder -> trajectory

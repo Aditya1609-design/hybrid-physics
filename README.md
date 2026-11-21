@@ -39,6 +39,18 @@ numpy, tracked-file checks):
 ./scripts/ci.sh --with-viewer   # also opens the viewer on every scenario (before a review)
 ```
 
+Regression tests pin the physics: `tests/regression/golden.json` holds state hashes and
+metrics for every scenario on both presets, and `hp_tests` compares them exactly. If a golden
+test fails, it prints which hashes and metrics moved. After a physics change has been reviewed
+and approved, regenerate the file and commit the diff with the change:
+
+```sh
+./build/release/tests/hp_golden                 # compare only (exit 1 if any run differs)
+./build/release/tests/hp_golden --write tests/regression/golden.json
+```
+
+The engine API is described, with its freeze status, in `docs/api.md`.
+
 To record the machine a result came from:
 
 ```sh
@@ -118,12 +130,12 @@ edge_index = traj.edge_index()              # [2, 2E], same convention as hp::Me
 ```
 engine/     headless static library (include/hp/ public headers, src/ by module)
 apps/       benchmark (XPBD speed), headless_runner (hp_run), viewer (hp_view, raylib)
-tests/      unit and regression tests, mirroring engine/ (plus tests/viewer)
+tests/      unit tests mirroring engine/ (plus tests/viewer), golden results in tests/regression
 scenarios/  JSON scenario files (six examples)
 ml/         Python: trajectory loader (data/), tools (format check, GNN cost estimate)
 cmake/      compiler settings, dependency fetching, engine dependency guard
 scripts/    local CI and machine info
-docs/       architecture, design decisions, data format, per-phase summaries
+docs/       architecture, API and freeze status, design decisions, data format, phase summaries
 data/       generated datasets (git-ignored except MANIFEST.md)
 results/    benchmark summaries, plots and tables
 ```
@@ -139,7 +151,7 @@ results/    benchmark summaries, plots and tables
 | 5  | Scenario system                         | Approved    |
 | 6  | Viewer                                  | Approved    |
 | 7  | Metrics and recording                   | Approved    |
-| 8  | Engine correctness and API freeze       | Not started |
+| 8  | Engine correctness and API freeze       | In review   |
 | 9  | Regions and solver interface            | Not started |
 | 10 | Dataset generation                      | Not started |
 | 11 | GNN training                            | Not started |
