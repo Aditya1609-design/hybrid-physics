@@ -34,13 +34,13 @@ This document grows as phases land. Sections marked *(planned)* are placeholders
 
 | Module      | Responsibility                                          | Status    |
 |-------------|---------------------------------------------------------|-----------|
-| `core`      | types, RNG, `SimState`, version and build info          | Phase 2   |
+| `core`      | types, RNG, `SimState`, state hash, version, build and git info | Phase 2, 7 |
 | `mesh`      | tet mesh, generators, topology, masses, graph export    | Phase 2 (partitioner planned) |
 | `solver`    | `ISolver` interface, XPBD, later the GNN solver         | Phase 3 (XPBD) |
 | `collision` | plane, sphere and oriented box colliders, signed distance | Phase 4 |
 | `scene`     | `SimState` setup (`make_state`, `pin_vertices`), scenario parsing and `build_scene` | Phase 2–5 |
-| `metrics`   | constraint error, energy, penetration; recording later  | Phase 3–4 (partial) |
-| `io`        | surface OBJ writer; trajectory recorder and reader later | Phase 2 (partial) |
+| `metrics`   | constraint error, energy, penetration, `measure_frame`  | Phase 3–4, 7 |
+| `io`        | surface OBJ writer, `IRecorder`, trajectory writer and reader | Phase 2, 7 |
 
 ## Mesh and simulation state
 
@@ -124,7 +124,7 @@ scenario.json --load_scenario--> Scenario (plain struct: mesh params, material, 
                                       v
             Scene { TetMesh, Topology, SimState, XpbdSolver, warnings }
                                       |
-              hp_run: step, metrics, optional CSV and OBJ, final state hash
+     hp_run: step, metrics, optional CSV, OBJ and trajectory, final state hash
 ```
 
 - Parsing checks everything that needs no mesh. `build_scene` does the geometric checks:
@@ -142,7 +142,7 @@ scenario.json -> load_scenario -> SimDriver (owns the Scene, same stepping as hp
    SimState -> vertex_colors(owner | region | body | plain, or display-only preview)
             -> build_surface -> CPU Lambert shading -> raylib mesh update -> draw
    solver.colliders() -> ground grid, translucent spheres and boxes
-   energy, penetration, constraint_error -> stats overlay
+   measure_frame -> stats overlay
 ```
 
 - Wall time decides only how many fixed steps run, so the viewer's frame N is bit-identical to
@@ -150,7 +150,35 @@ scenario.json -> load_scenario -> SimDriver (owns the Scene, same stepping as hp
 - Nothing in the viewer writes to `SimState`; the owner/region preview lives in the viewer's
   color buffer.
 
-## Data flow *(planned)*
+## Metrics and recording
 
-Scenario JSON -> scene loader -> SimState -> solver step(s) -> metrics + recorder -> trajectory files
--> Python dataset loader. Everything up to the metrics exists; the recorder is still planned.
+See `decisions/0009-trajectory-format.md` and `data_format.md`.
+
+```
+Scene --step--> SimState --measure_frame--> FrameMetrics {energy, error, penetration}
+                    |                              |
+                    |       (app) step_ms, machine info, timestamp
+                    v                              v
+            IRecorder::write_frame(frame, state, metrics, step_ms)
+                    |
+            TrajectoryWriter --> run.hptraj
+                                 preamble | header JSON | static block | frame 0 | frame 1 | ...
+                                     |
+            ml/data/trajectory.py (np.memmap) --> positions [F,N,3], pairs(k), edge_index
+            ml/tools/check_trajectory.py      --> cross-check against hp_run (ci.sh)
+```
+
+- `measure_frame` takes constraint data, colliders and gravity rather than a solver, so it
+  works the same for any solver that produced the state. `hp_run`, the viewer and the recorder
+  all use it, and `state_hash` gives all of them the same final-state hash.
+- The engine never reads a clock or the machine: step times, the timestamp and machine info
+  come from the app. The git commit is compiled in (`cmake/GitInfo.cmake`, refreshed on every
+  build).
+- Frame 0 is the initial state. A run that ends non-finite stops at the last valid frame with
+  status 3; a crashed run leaves an "unfinished" file that readers can still open.
+
+## Data flow
+
+Scenario JSON -> scene loader -> SimState -> solver step(s) -> metrics + recorder -> trajectory
+files -> Python loader. Everything up to the Python loader exists; datasets (Phase 10) and the
+GNN (Phase 11) build on it.

@@ -184,6 +184,22 @@ Every frame is stored, so the same file serves single-step and multi-frame train
 - jump of `k` frames: input frame `t`, target frame `t + k`, for `t = 0 .. F - k`
   (`F` = last frame index).
 
+## Producing and reading files
+
+```sh
+./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json --record run.hptraj
+.venv/bin/python ml/tools/check_trajectory.py \
+    --hp-run build/release/apps/headless_runner/hp_run scenarios/cube_drop.json
+```
+
+`ml/data/trajectory.py` is the Python reader (numpy only). `load(path)` validates the file and
+returns a `Trajectory` with memory-mapped `positions`, `velocities` and `solver_owner`
+([F, N, 3] / [F, N]), `metric(name)` for the per-frame scalars, `static` (the static arrays),
+`header`, `edge_index()` and `pairs(k)`. `state_hash` and `energies` recompute the hash and the
+energies from the stored arrays. `check_trajectory.py` runs hp_run, records, and checks the file
+against hp_run's printed hash and CSV, the recomputed energies, a second recording, and the
+example below; `scripts/ci.sh` runs it when `.venv` has numpy.
+
 ## Reading with numpy
 
 ```python

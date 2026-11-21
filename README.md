@@ -31,7 +31,8 @@ ctest --preset release
 Presets: `release` (-O2, deterministic floating point), `debug`, and `asan`
 (AddressSanitizer + UndefinedBehaviorSanitizer). Build output goes to `build/<preset>/`.
 
-Full local CI (release + asan, warnings as errors, tracked-file checks):
+Full local CI (release + asan, warnings as errors, trajectory cross-check when `.venv` has
+numpy, tracked-file checks):
 
 ```sh
 ./scripts/ci.sh            # add --clean for a fresh build, --with-debug to add the debug preset
@@ -55,7 +56,14 @@ final state; the same build on the same compiler gives the same hash on every ru
 ./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json --preset reference --frames 60
 ./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json --csv out.csv --surface-obj final.obj
 ./build/release/apps/headless_runner/hp_run my_scenario.json --check     # validate only
+./build/release/apps/headless_runner/hp_run scenarios/cube_drop.json --record run.hptraj
 ```
+
+`--record` writes every frame (positions, velocities, solver owner, energies, errors,
+penetration, step time) plus the scenario, seed, engine commit and machine to a trajectory file;
+the format is in `docs/data_format.md`. Kinetic, gravitational and elastic energy are reported
+separately. Elastic energy is only meaningful near convergence (reference preset, or a body at
+rest); on the realtime preset it mostly measures unconverged constraint residual.
 
 ## Viewer
 
@@ -91,6 +99,18 @@ Python 3.11+ in a local, git-ignored virtual environment:
 python3 -m venv .venv
 .venv/bin/python -m pip install -r ml/requirements.txt
 .venv/bin/python ml/tools/gnn_cost_estimate.py --flops-only    # GNN cost estimate, no PyTorch needed
+.venv/bin/python ml/tools/check_trajectory.py \
+    --hp-run build/release/apps/headless_runner/hp_run scenarios/cube_drop.json  # format cross-check
+```
+
+Reading a trajectory (numpy only):
+
+```python
+import sys; sys.path.insert(0, "ml")
+from data.trajectory import load
+traj = load("run.hptraj")
+x_t, v_t, x_next, v_next = traj.pairs(1)    # also pairs(k) for k-frame jumps
+edge_index = traj.edge_index()              # [2, 2E], same convention as hp::MeshGraph
 ```
 
 ## Repository layout
@@ -100,7 +120,7 @@ engine/     headless static library (include/hp/ public headers, src/ by module)
 apps/       benchmark (XPBD speed), headless_runner (hp_run), viewer (hp_view, raylib)
 tests/      unit and regression tests, mirroring engine/ (plus tests/viewer)
 scenarios/  JSON scenario files (six examples)
-ml/         Python tools (GNN cost estimate); training and evaluation in later phases
+ml/         Python: trajectory loader (data/), tools (format check, GNN cost estimate)
 cmake/      compiler settings, dependency fetching, engine dependency guard
 scripts/    local CI and machine info
 docs/       architecture, design decisions, data format, per-phase summaries
@@ -118,7 +138,7 @@ results/    benchmark summaries, plots and tables
 | 4  | Collisions                              | Approved    |
 | 5  | Scenario system                         | Approved    |
 | 6  | Viewer                                  | Approved    |
-| 7  | Metrics and recording                   | Not started |
+| 7  | Metrics and recording                   | In review   |
 | 8  | Engine correctness and API freeze       | Not started |
 | 9  | Regions and solver interface            | Not started |
 | 10 | Dataset generation                      | Not started |
