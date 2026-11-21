@@ -1,10 +1,12 @@
 // Runs a scenario file without graphics and prints metrics as it goes.
 // Usage: hp_run <scenario.json> [--frames N] [--preset realtime|reference] [--every K]
-//               [--csv metrics.csv] [--surface-obj final.obj] [--check]
+//               [--csv metrics.csv] [--record run.hptraj] [--surface-obj final.obj] [--check]
 //   --frames       run N frames instead of the scenario's count
 //   --preset       replace the scenario's substep and iteration counts with a preset's
 //   --every        print a metrics row every K frames (default: about ten rows per run)
 //   --csv          write every frame's metrics and step time to a CSV file
+//   --record       write every frame's state and metrics to a trajectory file
+//                  (format in docs/data_format.md)
 //   --surface-obj  write the final surface as an OBJ file
 //   --check        load and build the scene, print the summary and warnings, then stop
 // Exit codes: 0 ok, 1 invalid scenario or unwritable output, 2 usage error, 3 the state
@@ -18,6 +20,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
+#include <iterator>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -25,11 +30,13 @@
 
 #include "hp/core/state_hash.hpp"
 #include "hp/io/obj.hpp"
+#include "hp/io/trajectory.hpp"
 #include "hp/metrics/frame_metrics.hpp"
 #include "hp/scene/scenario.hpp"
 #include "hp/scene/scene.hpp"
 #include "hp/solver/xpbd.hpp"
 #include "hp/version.hpp"
+#include "machine_info.hpp"
 
 namespace {
 
@@ -39,6 +46,7 @@ struct Options {
     std::string preset;
     long every = 0;  // 0: choose from the frame count
     std::string csv_path;
+    std::string record_path;
     std::string obj_path;
     bool check_only = false;
 };
@@ -47,7 +55,8 @@ int usage(const char* argv0) {
     std::fprintf(stderr,
                  "usage: %s <scenario.json> [--frames N] [--preset realtime|reference] "
                  "[--every K]\n"
-                 "           [--csv metrics.csv] [--surface-obj final.obj] [--check]\n",
+                 "           [--csv metrics.csv] [--record run.hptraj] [--surface-obj final.obj]"
+                 " [--check]\n",
                  argv0);
     return 2;
 }
@@ -72,6 +81,8 @@ bool parse_args(int argc, char** argv, Options& o) {
             if (o.preset != "realtime" && o.preset != "reference") return false;
         } else if (std::strcmp(a, "--csv") == 0 && has_value) {
             o.csv_path = argv[++i];
+        } else if (std::strcmp(a, "--record") == 0 && has_value) {
+            o.record_path = argv[++i];
         } else if (std::strcmp(a, "--surface-obj") == 0 && has_value) {
             o.obj_path = argv[++i];
         } else if (std::strcmp(a, "--check") == 0) {
@@ -83,6 +94,12 @@ bool parse_args(int argc, char** argv, Options& o) {
         }
     }
     return !o.scenario_path.empty();
+}
+
+// Whole file as text, or empty if it cannot be read (the scenario was already loaded from it).
+std::string read_file(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
 
 bool all_finite(const hp::SimState& s) {
@@ -194,6 +211,38 @@ int main(int argc, char** argv) {
                      "num_in_contact,step_ms\n");
     }
 
+    // The recorder is opened before the run, so an unwritable path fails before any work.
+    std::unique_ptr<hp::TrajectoryWriter> recorder;
+    if (!opt.record_path.empty()) {
+        try {
+            recorder = std::make_unique<hp::TrajectoryWriter>(opt.record_path);
+            hp::RunInfo info;
+            info.scenario_path = opt.scenario_path;
+            info.scenario_text = read_file(opt.scenario_path);
+            info.scenario = scenario;
+            info.machine = collect_machine_info();
+            info.created_utc = utc_timestamp();
+            recorder->begin(info, scene);
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "error: %s\n", e.what());
+            if (csv != nullptr) std::fclose(csv);
+            return 1;
+        }
+        std::printf("record:    %s, %llu bytes per frame\n", opt.record_path.c_str(),
+                    static_cast<unsigned long long>(recorder->frame_size()));
+    }
+    // Appends one frame to the recording; on a write error it reports and returns false.
+    auto record = [&](long f, const Row& r) {
+        if (!recorder) return true;
+        try {
+            recorder->write_frame(static_cast<hp::Index>(f), scene.state, r.m, r.step_ms);
+            return true;
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "error: %s\n", e.what());
+            return false;
+        }
+    };
+
     const long frames = scenario.frames;
     const long every = opt.every > 0 ? opt.every : std::max(1L, frames / 10);
     std::printf("note:      elastic energy is only meaningful near convergence "
@@ -202,18 +251,19 @@ int main(int argc, char** argv) {
     const Row start = measure(scene, 0, 0.0);
     print_row(start);
     if (csv != nullptr) write_csv_row(csv, start);
+    int status = record(0, start) ? 0 : 1;
 
     const hp::RegionMask mask = hp::RegionMask::all(scene.state.num_vertices());
     std::vector<double> step_ms;
     step_ms.reserve(static_cast<size_t>(frames));
     double max_pen = start.m.penetration.max_depth;
-    int status = 0;
-    for (long f = 1; f <= frames; ++f) {
+    for (long f = 1; f <= frames && status == 0; ++f) {
         const auto t0 = std::chrono::steady_clock::now();
         scene.solver.step(scene.state, mask, hp::kFrameDt);
         const auto t1 = std::chrono::steady_clock::now();
         step_ms.push_back(std::chrono::duration<double, std::milli>(t1 - t0).count());
         if (!all_finite(scene.state)) {
+            // The non-finite frame is not recorded; the file ends with the last valid one.
             std::fprintf(stderr, "error: state became non-finite at frame %ld\n", f);
             status = 3;
             break;
@@ -222,8 +272,19 @@ int main(int argc, char** argv) {
         max_pen = std::max(max_pen, row.m.penetration.max_depth);
         if (f % every == 0 || f == frames) print_row(row);
         if (csv != nullptr) write_csv_row(csv, row);
+        if (!record(f, row)) status = 1;
     }
     if (csv != nullptr) std::fclose(csv);
+
+    // A failed write leaves the file marked unfinished; otherwise the run's status is stored.
+    if (recorder && status != 1) {
+        try {
+            recorder->end(static_cast<std::uint32_t>(status));
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "error: %s\n", e.what());
+            status = 1;
+        }
+    }
 
     if (!opt.obj_path.empty()) {
         try {
