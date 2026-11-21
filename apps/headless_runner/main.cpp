@@ -23,10 +23,9 @@
 #include <string>
 #include <vector>
 
+#include "hp/core/state_hash.hpp"
 #include "hp/io/obj.hpp"
-#include "hp/metrics/constraint_error.hpp"
-#include "hp/metrics/energy.hpp"
-#include "hp/metrics/penetration.hpp"
+#include "hp/metrics/frame_metrics.hpp"
 #include "hp/scene/scenario.hpp"
 #include "hp/scene/scene.hpp"
 #include "hp/solver/xpbd.hpp"
@@ -86,24 +85,6 @@ bool parse_args(int argc, char** argv, Options& o) {
     return !o.scenario_path.empty();
 }
 
-// FNV-1a over the raw bytes of positions then velocities. Equal hashes mean bit-identical
-// final states, so runs on two machines can be compared with one number.
-template <typename T>
-void fnv1a(std::uint64_t& h, const std::vector<T>& data) {
-    const auto* bytes = reinterpret_cast<const unsigned char*>(data.data());
-    for (size_t i = 0; i < data.size() * sizeof(T); ++i) {
-        h ^= bytes[i];
-        h *= 0x100000001b3ULL;
-    }
-}
-
-std::uint64_t state_hash(const hp::SimState& s) {
-    std::uint64_t h = 0xcbf29ce484222325ULL;
-    fnv1a(h, s.positions);
-    fnv1a(h, s.velocities);
-    return h;
-}
-
 bool all_finite(const hp::SimState& s) {
     for (size_t v = 0; v < s.positions.size(); ++v) {
         if (!s.positions[v].allFinite() || !s.velocities[v].allFinite()) return false;
@@ -114,17 +95,16 @@ bool all_finite(const hp::SimState& s) {
 // One frame's metrics, as printed and written to the CSV.
 struct Row {
     long frame;
-    hp::Energy energy;
-    hp::ConstraintError error;
-    hp::Penetration pen;
+    hp::FrameMetrics m;
     double step_ms;
 };
 
 Row measure(const hp::Scene& scene, long frame, double step_ms) {
     const hp::XpbdSolver& solver = scene.solver;
-    return {frame, hp::energy(scene.state, solver.constraints(), solver.settings().gravity),
-            hp::constraint_error(scene.state, solver.constraints()),
-            hp::penetration(scene.state, solver.colliders()), step_ms};
+    return {frame,
+            hp::measure_frame(scene.state, solver.constraints(), solver.colliders(),
+                              solver.settings().gravity),
+            step_ms};
 }
 
 void print_header() {
@@ -135,16 +115,17 @@ void print_header() {
 void print_row(const Row& r) {
     std::printf("%7ld %8.3f %11.4g %11.4g %11.4g %10.3g %10.3g %10.3g %9.3f\n", r.frame,
                 static_cast<double>(r.frame) * static_cast<double>(hp::kFrameDt),
-                r.energy.kinetic, r.energy.gravitational, r.energy.elastic, r.error.edge_rms,
-                r.error.volume_rms, r.pen.max_depth, r.step_ms);
+                r.m.energy.kinetic, r.m.energy.gravitational, r.m.energy.elastic,
+                r.m.error.edge_rms, r.m.error.volume_rms, r.m.penetration.max_depth, r.step_ms);
 }
 
 void write_csv_row(std::FILE* f, const Row& r) {
     std::fprintf(f, "%ld,%.6f,%.9g,%.9g,%.9g,%.6g,%.6g,%.6g,%.6g,%d,%.6g,%d,%d,%.4f\n", r.frame,
                  static_cast<double>(r.frame) * static_cast<double>(hp::kFrameDt),
-                 r.energy.kinetic, r.energy.gravitational, r.energy.elastic, r.error.edge_rms,
-                 r.error.edge_max, r.error.volume_rms, r.error.volume_max, r.error.inverted_tets,
-                 r.pen.max_depth, r.pen.num_penetrating, r.pen.num_in_contact, r.step_ms);
+                 r.m.energy.kinetic, r.m.energy.gravitational, r.m.energy.elastic,
+                 r.m.error.edge_rms, r.m.error.edge_max, r.m.error.volume_rms,
+                 r.m.error.volume_max, r.m.error.inverted_tets, r.m.penetration.max_depth,
+                 r.m.penetration.num_penetrating, r.m.penetration.num_in_contact, r.step_ms);
 }
 
 }  // namespace
@@ -225,7 +206,7 @@ int main(int argc, char** argv) {
     const hp::RegionMask mask = hp::RegionMask::all(scene.state.num_vertices());
     std::vector<double> step_ms;
     step_ms.reserve(static_cast<size_t>(frames));
-    double max_pen = start.pen.max_depth;
+    double max_pen = start.m.penetration.max_depth;
     int status = 0;
     for (long f = 1; f <= frames; ++f) {
         const auto t0 = std::chrono::steady_clock::now();
@@ -238,7 +219,7 @@ int main(int argc, char** argv) {
             break;
         }
         const Row row = measure(scene, f, step_ms.back());
-        max_pen = std::max(max_pen, row.pen.max_depth);
+        max_pen = std::max(max_pen, row.m.penetration.max_depth);
         if (f % every == 0 || f == frames) print_row(row);
         if (csv != nullptr) write_csv_row(csv, row);
     }
@@ -261,6 +242,6 @@ int main(int argc, char** argv) {
         sorted.empty() ? 0.0 : sorted[std::min(sorted.size() - 1, (sorted.size() * 95) / 100)];
     std::printf("\nframes %zu, step median %.3f ms, p95 %.3f ms, max penetration %.3g m\n",
                 step_ms.size(), median, p95, max_pen);
-    std::printf("final state hash %016" PRIx64 "\n", state_hash(scene.state));
+    std::printf("final state hash %016" PRIx64 "\n", hp::state_hash(scene.state));
     return status;
 }

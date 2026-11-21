@@ -8,6 +8,9 @@ namespace hp {
 
 // Energy terms in joules, accumulated in double. Pinned vertices (infinite mass) are left out
 // of the kinetic and gravitational terms, and zero-compliance constraints out of the elastic one.
+// The elastic term is only physical energy near convergence (reference preset, or a body at
+// rest). With few iterations the constraints are left unconverged and C^2 / (2 alpha) mostly
+// measures that leftover residual, so it can be far larger than the real strain energy.
 struct Energy {
     double kinetic = 0.0;
     double gravitational = 0.0;  // -m g.x, zero at the origin

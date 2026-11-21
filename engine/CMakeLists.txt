@@ -20,6 +20,7 @@ add_library(hp_engine STATIC
     src/collision/collider.cpp
     src/core/rng.cpp
     src/core/sim_state.cpp
+    src/core/state_hash.cpp
     src/core/version.cpp
     src/io/obj.cpp
     src/mesh/generators.cpp
@@ -29,6 +30,7 @@ add_library(hp_engine STATIC
     src/mesh/topology.cpp
     src/metrics/constraint_error.cpp
     src/metrics/energy.cpp
+    src/metrics/frame_metrics.cpp
     src/metrics/penetration.cpp
     src/scene/make_state.cpp
     src/scene/pin.cpp
