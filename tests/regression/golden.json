@@ -1,0 +1,511 @@
+{
+  "build_info": "hybrid-physics 0.1.0 | Release | Apple LLVM 21.0.0 (clang-2100.3.34.2) | fp-contract=off | sanitizers=none",
+  "description": "Golden reference results for scenarios/*.json. Regenerate only with hp_golden --write after an approved physics change.",
+  "engine_version": "0.1.0",
+  "runs": [
+    {
+      "final_metrics": {
+        "centroid_x": 2.742351453764905,
+        "centroid_y": 0.5028468612332535,
+        "centroid_z": -0.0281467572553932,
+        "edge_max": 0.02993384536586726,
+        "edge_rms": 0.007896260854887687,
+        "elastic_j": 4.019984669820985,
+        "gravitational_j": 588.2630211502893,
+        "inverted_tets": 0.0,
+        "kinetic_j": 327.854319547661,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 0.0064442355451321195,
+        "volume_rms": 0.0006765576815607859
+      },
+      "mesh_fingerprint": "de7e515de53536aa",
+      "preset": "realtime",
+      "scenario": "ball_on_sphere.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "6910aa412b906491"
+        },
+        {
+          "frame": 1,
+          "hash": "947c7580af47378a"
+        },
+        {
+          "frame": 30,
+          "hash": "5d828b549cddadf5"
+        },
+        {
+          "frame": 60,
+          "hash": "f65a55c913b53ef6"
+        },
+        {
+          "frame": 120,
+          "hash": "60e9249da7d258a9"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": -0.003912086473844413,
+        "centroid_y": 0.4001839300506704,
+        "centroid_z": -0.009530765091594298,
+        "edge_max": 0.2615005071644632,
+        "edge_rms": 0.05887460098006867,
+        "elastic_j": 162.86893382641122,
+        "gravitational_j": 327.113288950985,
+        "inverted_tets": 0.0,
+        "kinetic_j": 3.1961707085141855,
+        "max_penetration_m": 1.4464748177012154e-08,
+        "num_in_contact": 21.0,
+        "num_penetrating": 2.0,
+        "rms_penetration_m": 1.0243979595388088e-08,
+        "volume_max": 0.14240172844592133,
+        "volume_rms": 0.013278770227842069
+      },
+      "mesh_fingerprint": "24be5fc3252c45a3",
+      "preset": "realtime",
+      "scenario": "beam_drape_box.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "f60ca81d64b2352d"
+        },
+        {
+          "frame": 1,
+          "hash": "38e8491ec2211e12"
+        },
+        {
+          "frame": 30,
+          "hash": "19fbd44af67b71b9"
+        },
+        {
+          "frame": 60,
+          "hash": "093f1edef0ec36fb"
+        },
+        {
+          "frame": 120,
+          "hash": "fd7f65ec060e7cdb"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": -0.05632444450748153,
+        "centroid_y": 0.6838882875069976,
+        "centroid_z": -0.001007731482386589,
+        "edge_max": 0.13334806338930624,
+        "edge_rms": 0.019778583372627896,
+        "elastic_j": 281.76392923943143,
+        "gravitational_j": 815.9739633780018,
+        "inverted_tets": 0.0,
+        "kinetic_j": 46.67864654521996,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 0.037874923369440754,
+        "volume_rms": 0.004588807986654902
+      },
+      "mesh_fingerprint": "b66a1d6ebdeaee42",
+      "preset": "realtime",
+      "scenario": "cantilever_beam.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "1acdc97a736dc1b1"
+        },
+        {
+          "frame": 1,
+          "hash": "12efd170d430b953"
+        },
+        {
+          "frame": 30,
+          "hash": "118e1bfe0bbfe69f"
+        },
+        {
+          "frame": 60,
+          "hash": "7e742d874c4b52fd"
+        },
+        {
+          "frame": 120,
+          "hash": "c04db1eb21463a9f"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": -0.006242681315916156,
+        "centroid_y": 0.24749923250107772,
+        "centroid_z": -0.004089993199388482,
+        "edge_max": 0.040063238696006365,
+        "edge_rms": 0.006687513513080292,
+        "elastic_j": 12.108317299409558,
+        "gravitational_j": 303.27764969771715,
+        "inverted_tets": 0.0,
+        "kinetic_j": 2.6560424670155878,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 63.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 0.041443035922192145,
+        "volume_rms": 0.004085516932802003
+      },
+      "mesh_fingerprint": "586d053bafd24702",
+      "preset": "realtime",
+      "scenario": "cube_drop.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "7c689cdd6840f968"
+        },
+        {
+          "frame": 1,
+          "hash": "4cfbf3d2e5743273"
+        },
+        {
+          "frame": 30,
+          "hash": "fd5707476647a615"
+        },
+        {
+          "frame": 60,
+          "hash": "a88b412464733e6c"
+        },
+        {
+          "frame": 120,
+          "hash": "6edfe562d1e9783a"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": 1.360480136148436,
+        "centroid_y": -0.4145869738245844,
+        "centroid_z": -0.0009355483396432251,
+        "edge_max": 0.0257866328750368,
+        "edge_rms": 0.0035272489707073714,
+        "elastic_j": 10.340190974445616,
+        "gravitational_j": -260.33716158214753,
+        "inverted_tets": 0.0,
+        "kinetic_j": 5.212316342600439,
+        "max_penetration_m": 1.0383463688867778e-07,
+        "num_in_contact": 42.0,
+        "num_penetrating": 19.0,
+        "rms_penetration_m": 4.2404995552931696e-08,
+        "volume_max": 0.029393696573392962,
+        "volume_rms": 0.003194214147355157
+      },
+      "mesh_fingerprint": "453212b3cfa310ae",
+      "preset": "realtime",
+      "scenario": "cube_slide_slope.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "70e9f72504886832"
+        },
+        {
+          "frame": 1,
+          "hash": "c568c1dc31d23bb4"
+        },
+        {
+          "frame": 30,
+          "hash": "ee31f40091770083"
+        },
+        {
+          "frame": 60,
+          "hash": "cd7aa12baf7c868f"
+        },
+        {
+          "frame": 120,
+          "hash": "ea3c4cc353d1554c"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": -0.6096841335817954,
+        "centroid_y": 0.8967059459700181,
+        "centroid_z": -1.5296572738764238,
+        "edge_max": 0.000689733643250613,
+        "edge_rms": 0.00020433335305948885,
+        "elastic_j": 0.2163428001986307,
+        "gravitational_j": 562.9878525550357,
+        "inverted_tets": 0.0,
+        "kinetic_j": 214.83683511274006,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 0.0005176721679091377,
+        "volume_rms": 0.00014445937827359525
+      },
+      "mesh_fingerprint": "14a5ab2f28aa6dbf",
+      "preset": "realtime",
+      "scenario": "cube_throw_spin.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "69449f351c0b126a"
+        },
+        {
+          "frame": 1,
+          "hash": "b635528d5d6444ff"
+        },
+        {
+          "frame": 30,
+          "hash": "65af54e7dec2fea0"
+        },
+        {
+          "frame": 60,
+          "hash": "f6c39635070ee4b2"
+        },
+        {
+          "frame": 120,
+          "hash": "f41f7c13be72f854"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": 0.10024526130684164,
+        "centroid_y": 1.0653371416928556,
+        "centroid_z": -2.4406285531309044e-07,
+        "edge_max": 0.1821258845467424,
+        "edge_rms": 0.020224432370456732,
+        "elastic_j": 26.18787461679349,
+        "gravitational_j": 1246.25095703614,
+        "inverted_tets": 0.0,
+        "kinetic_j": 129.47934569323002,
+        "max_penetration_m": 3.06963421348172e-08,
+        "num_in_contact": 13.0,
+        "num_penetrating": 7.0,
+        "rms_penetration_m": 1.7624896344798645e-08,
+        "volume_max": 0.019035230457737518,
+        "volume_rms": 0.0018670365022690374
+      },
+      "mesh_fingerprint": "de7e515de53536aa",
+      "preset": "reference",
+      "scenario": "ball_on_sphere.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "6910aa412b906491"
+        },
+        {
+          "frame": 1,
+          "hash": "4bdbc5213f7f3cba"
+        },
+        {
+          "frame": 5,
+          "hash": "13f9fed3897990e7"
+        },
+        {
+          "frame": 10,
+          "hash": "412a9cbb0d196757"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": 1.645646191539285e-08,
+        "centroid_y": 0.7651940064416045,
+        "centroid_z": -7.761021455128987e-11,
+        "edge_max": 8.38186266602581e-06,
+        "edge_rms": 1.34012978571335e-06,
+        "elastic_j": 4.6458437463802855e-07,
+        "gravitational_j": 600.5245071991696,
+        "inverted_tets": 0.0,
+        "kinetic_j": 103.44058756876456,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 3.799189608723753e-06,
+        "volume_rms": 9.80382403314337e-07
+      },
+      "mesh_fingerprint": "24be5fc3252c45a3",
+      "preset": "reference",
+      "scenario": "beam_drape_box.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "f60ca81d64b2352d"
+        },
+        {
+          "frame": 1,
+          "hash": "84402ad4c3d41c8f"
+        },
+        {
+          "frame": 5,
+          "hash": "43e3de4f9bc1ef0c"
+        },
+        {
+          "frame": 10,
+          "hash": "7889346a0bb64cd2"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": -0.003223478648815217,
+        "centroid_y": 0.9142738460004329,
+        "centroid_z": -0.0003455611411482096,
+        "edge_max": 0.040236349718236794,
+        "edge_rms": 0.006781792299195276,
+        "elastic_j": 19.71817064805724,
+        "gravitational_j": 1095.3475596502767,
+        "inverted_tets": 0.0,
+        "kinetic_j": 80.56839258959758,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 0.005214250206613357,
+        "volume_rms": 0.0004385116375066412
+      },
+      "mesh_fingerprint": "b66a1d6ebdeaee42",
+      "preset": "reference",
+      "scenario": "cantilever_beam.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "1acdc97a736dc1b1"
+        },
+        {
+          "frame": 1,
+          "hash": "e672ff3cf8c8705c"
+        },
+        {
+          "frame": 5,
+          "hash": "62b97d4daa8e60df"
+        },
+        {
+          "frame": 10,
+          "hash": "5210d8816f3ab6a3"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": 9.668840045936275e-09,
+        "centroid_y": 0.863695004839956,
+        "centroid_z": -2.3371853931849753e-08,
+        "edge_max": 1.4066514009702935e-05,
+        "edge_rms": 2.013495509504589e-06,
+        "elastic_j": 1.1912111266424728e-06,
+        "gravitational_j": 1059.1060795525775,
+        "inverted_tets": 0.0,
+        "kinetic_j": 167.07925616072737,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 5.689200650229245e-06,
+        "volume_rms": 1.2115977106888944e-06
+      },
+      "mesh_fingerprint": "586d053bafd24702",
+      "preset": "reference",
+      "scenario": "cube_drop.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "7c689cdd6840f968"
+        },
+        {
+          "frame": 1,
+          "hash": "ccc0e020a85b3de5"
+        },
+        {
+          "frame": 5,
+          "hash": "0868ea7bea2bc794"
+        },
+        {
+          "frame": 10,
+          "hash": "55e499393c8c4f50"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": 0.2340346230438343,
+        "centroid_y": 0.12236747756763208,
+        "centroid_z": 1.1364361389373015e-06,
+        "edge_max": 0.028809444486266746,
+        "edge_rms": 0.005052692237834731,
+        "elastic_j": 2.2513455116328585,
+        "gravitational_j": 76.75167376030114,
+        "inverted_tets": 0.0,
+        "kinetic_j": 36.47720806152827,
+        "max_penetration_m": 8.531522155408311e-10,
+        "num_in_contact": 7.0,
+        "num_penetrating": 1.0,
+        "rms_penetration_m": 8.531522155408311e-10,
+        "volume_max": 0.001426307453950491,
+        "volume_rms": 0.00019973944131740031
+      },
+      "mesh_fingerprint": "453212b3cfa310ae",
+      "preset": "reference",
+      "scenario": "cube_slide_slope.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "70e9f72504886832"
+        },
+        {
+          "frame": 1,
+          "hash": "986d5eabdef0f84c"
+        },
+        {
+          "frame": 5,
+          "hash": "6a0558f55064c7c1"
+        },
+        {
+          "frame": 10,
+          "hash": "b45c6824ccf33da0"
+        }
+      ]
+    },
+    {
+      "final_metrics": {
+        "centroid_x": -0.8899335868157033,
+        "centroid_y": 0.5225428636498076,
+        "centroid_z": -0.09975199864596215,
+        "edge_max": 0.04513972192360501,
+        "edge_rms": 0.008644596242471844,
+        "elastic_j": 76.58361765586803,
+        "gravitational_j": 328.21654761119885,
+        "inverted_tets": 0.0,
+        "kinetic_j": 2940.5992347114247,
+        "max_penetration_m": 0.0,
+        "num_in_contact": 0.0,
+        "num_penetrating": 0.0,
+        "rms_penetration_m": 0.0,
+        "volume_max": 0.000985405845009308,
+        "volume_rms": 0.00020842367958431396
+      },
+      "mesh_fingerprint": "14a5ab2f28aa6dbf",
+      "preset": "reference",
+      "scenario": "cube_throw_spin.json",
+      "state_hashes": [
+        {
+          "frame": 0,
+          "hash": "69449f351c0b126a"
+        },
+        {
+          "frame": 1,
+          "hash": "c0b0df861539cad0"
+        },
+        {
+          "frame": 5,
+          "hash": "92f5a2058149e435"
+        },
+        {
+          "frame": 10,
+          "hash": "63ad56f8f7884bbd"
+        }
+      ]
+    }
+  ]
+}
