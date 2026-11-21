@@ -218,6 +218,13 @@ TEST_CASE("colliders a fast vertex could cross produce a warning") {
     CHECK(build(doc).warnings.empty());
 }
 
+TEST_CASE("a mesh too large for int32 indices is rejected by build_scene") {
+    json doc = cube_scenario(hp::Vec3::Zero());
+    doc["bodies"][0]["mesh"]["cells"] = {1300, 1300, 1300};
+    CHECK_NOTHROW(hp::parse_scenario(doc.dump()));  // each count alone is a valid int32
+    CHECK(contains(build_error(doc), "too many cells"));
+}
+
 TEST_CASE("more than one body is rejected for now") {
     json doc = cube_scenario(hp::Vec3::Zero());
     doc["bodies"].push_back(doc["bodies"][0]);

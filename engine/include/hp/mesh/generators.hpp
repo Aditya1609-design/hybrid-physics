@@ -32,7 +32,9 @@ struct SphereParams {
     Vec3 center = Vec3::Zero();
 };
 
-// The generators throw std::invalid_argument for non-positive sizes or cell counts.
+// The generators throw std::invalid_argument for non-positive sizes or cell counts, and for
+// cell counts whose grid points or tets would not fit the int32 Index range (checked before
+// anything is allocated).
 TetMesh make_box(const BoxParams& params);
 TetMesh make_beam(const BeamParams& params);
 TetMesh make_sphere(const SphereParams& params);

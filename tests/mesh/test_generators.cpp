@@ -146,6 +146,32 @@ TEST_CASE("generators reject invalid parameters") {
     CHECK_THROWS_AS(hp::make_sphere(sp), std::invalid_argument);
 }
 
+TEST_CASE("generators reject cell counts just past the int32 index range") {
+    // 1291^3 grid points is just over 2^31 - 1 (1290^3 is just under).
+    hp::BoxParams cube;
+    cube.cells_x = cube.cells_y = cube.cells_z = 1290;
+    CHECK_THROWS_WITH_AS(hp::make_box(cube), doctest::Contains("grid points"),
+                         std::invalid_argument);
+    // 429,496,730 cells in a row: the grid points fit, but 5 tets per cell do not.
+    hp::BoxParams row;
+    row.cells_x = 429496730;
+    row.cells_y = row.cells_z = 1;
+    CHECK_THROWS_WITH_AS(hp::make_box(row), doctest::Contains("tets"), std::invalid_argument);
+    hp::BeamParams beam;
+    beam.cells_along = 429496730;
+    beam.cells_across = 1;
+    CHECK_THROWS_WITH_AS(hp::make_beam(beam), doctest::Contains("tets"), std::invalid_argument);
+    // Largest possible counts: products far beyond int64 must still be caught.
+    cube.cells_x = cube.cells_y = cube.cells_z = 2147483647;
+    CHECK_THROWS_AS(hp::make_box(cube), std::invalid_argument);
+    hp::SphereParams sphere;
+    sphere.cells_per_diameter = 1290;
+    CHECK_THROWS_WITH_AS(hp::make_sphere(sphere), doctest::Contains("grid points"),
+                         std::invalid_argument);
+    sphere.cells_per_diameter = 2147483647;
+    CHECK_THROWS_AS(hp::make_sphere(sphere), std::invalid_argument);
+}
+
 TEST_CASE("validate catches broken meshes") {
     hp::BoxParams p;
     p.cells_x = p.cells_y = p.cells_z = 1;

@@ -1,5 +1,8 @@
 #include "hp/mesh/generators.hpp"
 
+#include <cstdint>
+#include <initializer_list>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -91,6 +94,34 @@ void require_positive(Index value, const char* what) {
     if (value <= 0) throw std::invalid_argument(std::string(what) + " must be positive");
 }
 
+// Product of positive factors, or -1 once it passes the int32 index range. Each factor is at
+// most 2^31 and the running product stays below 2^31, so int64 never overflows here.
+std::int64_t checked_product(std::initializer_list<std::int64_t> factors) {
+    constexpr std::int64_t kMax = std::numeric_limits<Index>::max();
+    std::int64_t product = 1;
+    for (const std::int64_t f : factors) {
+        product *= f;
+        if (product > kMax) return -1;
+    }
+    return product;
+}
+
+// Grid points and tets are numbered with int32 Index, so both counts must fit. Checked before
+// anything is allocated, so oversized parameters fail fast instead of overflowing.
+// `cells` is the number of cells that become tets, or -1 if that count is already too large.
+void require_index_range(const char* what, Index nx, Index ny, Index nz, std::int64_t cells) {
+    const std::int64_t points = checked_product({std::int64_t{nx} + 1, std::int64_t{ny} + 1,
+                                                 std::int64_t{nz} + 1});
+    if (points < 0) {
+        throw std::invalid_argument(std::string(what) +
+                                    ": too many cells: the grid points exceed the int32 index range");
+    }
+    if (cells < 0 || checked_product({cells, 5}) < 0) {
+        throw std::invalid_argument(std::string(what) +
+                                    ": too many cells: the tets exceed the int32 index range");
+    }
+}
+
 }  // namespace
 
 TetMesh make_box(const BoxParams& p) {
@@ -100,6 +131,8 @@ TetMesh make_box(const BoxParams& p) {
     require_positive(p.cells_x, "box cells_x");
     require_positive(p.cells_y, "box cells_y");
     require_positive(p.cells_z, "box cells_z");
+    require_index_range("box", p.cells_x, p.cells_y, p.cells_z,
+                        checked_product({p.cells_x, p.cells_y, p.cells_z}));
 
     CellGrid g;
     g.nx = p.cells_x;
@@ -117,6 +150,10 @@ TetMesh make_box(const BoxParams& p) {
 TetMesh make_beam(const BeamParams& p) {
     require_positive(p.length, "beam length");
     require_positive(p.thickness, "beam thickness");
+    require_positive(p.cells_along, "beam cells_along");
+    require_positive(p.cells_across, "beam cells_across");
+    require_index_range("beam", p.cells_along, p.cells_across, p.cells_across,
+                        checked_product({p.cells_along, p.cells_across, p.cells_across}));
     BoxParams box;
     box.size = Vec3(p.length, p.thickness, p.thickness);
     box.cells_x = p.cells_along;
@@ -130,8 +167,24 @@ TetMesh make_sphere(const SphereParams& p) {
     require_positive(p.radius, "sphere radius");
     require_positive(p.cells_per_diameter, "sphere cells_per_diameter");
 
+    // The point check comes first, so the cell count below loops over a grid that fits.
+    const Index n = p.cells_per_diameter;
+    require_index_range("sphere", n, n, n, 0);
+    const double half_n = static_cast<double>(n) / 2.0;
+    // Cell centres measured from the sphere centre in units of h, so the test is exact and
+    // symmetric: the offsets are half-integers and the comparison is done in double.
+    auto inside = [half_n](Index i, Index j, Index k) {
+        const double x = i + 0.5 - half_n, y = j + 0.5 - half_n, z = k + 0.5 - half_n;
+        return x * x + y * y + z * z < half_n * half_n;
+    };
+    std::int64_t kept = 0;
+    for (Index k = 0; k < n; ++k)
+        for (Index j = 0; j < n; ++j)
+            for (Index i = 0; i < n; ++i) kept += inside(i, j, k) ? 1 : 0;
+    require_index_range("sphere", n, n, n, kept);
+
     CellGrid g;
-    g.nx = g.ny = g.nz = p.cells_per_diameter;
+    g.nx = g.ny = g.nz = n;
     const Real h = Real(2) * p.radius / static_cast<Real>(p.cells_per_diameter);
     g.cell_size = Vec3(h, h, h);
     g.origin = p.center - Vec3(p.radius, p.radius, p.radius);
@@ -139,15 +192,9 @@ TetMesh make_sphere(const SphereParams& p) {
                       static_cast<size_t>(g.nz),
                   0);
 
-    // Cell centres measured from the sphere centre in units of h, so the test is exact and
-    // symmetric: the offsets are half-integers and the comparison is done in double.
-    const double half_n = static_cast<double>(p.cells_per_diameter) / 2.0;
     for (Index k = 0; k < g.nz; ++k)
         for (Index j = 0; j < g.ny; ++j)
-            for (Index i = 0; i < g.nx; ++i) {
-                const double x = i + 0.5 - half_n, y = j + 0.5 - half_n, z = k + 0.5 - half_n;
-                g.keep[g.cell(i, j, k)] = (x * x + y * y + z * z < half_n * half_n) ? 1 : 0;
-            }
+            for (Index i = 0; i < g.nx; ++i) g.keep[g.cell(i, j, k)] = inside(i, j, k) ? 1 : 0;
 
     // The centre cell(s) always pass the test, so the mesh is never empty.
     return build_from_cells(g);
