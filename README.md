@@ -151,7 +151,7 @@ results/    benchmark summaries, plots and tables
 | 5  | Scenario system                         | Approved    |
 | 6  | Viewer                                  | Approved    |
 | 7  | Metrics and recording                   | Approved    |
-| 8  | Engine correctness and API freeze       | In review   |
+| 8  | Engine correctness and API freeze       | Approved    |
 | 9  | Regions and solver interface            | Not started |
 | 10 | Dataset generation                      | Not started |
 | 11 | GNN training                            | Not started |

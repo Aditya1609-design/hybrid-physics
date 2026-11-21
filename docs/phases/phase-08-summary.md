@@ -1,6 +1,6 @@
 # Phase 8: Engine correctness and API freeze proposal
 
-Status: in review. Branch `phase/08-engine-correctness`.
+Status: approved 2026-11-22 (tag `phase-08-approved`). Branch `phase/08-engine-correctness`.
 
 ## What was built
 
@@ -106,3 +106,12 @@ Golden state hashes after 120 frames (real-time) and 10 frames (reference), M1, 
 2. **Graph edge-count limit (note 3 in the review).** Recommendation: document only, as done.
    The alternative is a guard in `build_topology` / `build_graph`, which is a small code change
    for a case that cannot fit in memory.
+
+## Review outcome
+
+- Approved.
+- API freeze: signed off as written in `docs/api.md` and ADR 0010. Everything listed as frozen
+  is frozen from now on; `solver/solver.hpp` and `scene/scene.hpp` stay provisional until the
+  end of Phase 9, and the graph node features until the end of Phase 11.
+- Graph edge-count limit: documented only (in `docs/api.md` and the review); no guard in
+  `build_topology` or `build_graph`.
