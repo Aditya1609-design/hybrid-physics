@@ -4,9 +4,7 @@
 #include <limits>
 #include <optional>
 
-#include "hp/metrics/constraint_error.hpp"
-#include "hp/metrics/energy.hpp"
-#include "hp/metrics/penetration.hpp"
+#include "hp/metrics/frame_metrics.hpp"
 #include "hp/scene/scenario.hpp"
 #include "hp/scene/scene.hpp"
 #include "hp/solver/solver.hpp"
@@ -35,13 +33,6 @@ private:
     bool behind_ = false;
 };
 
-// Metrics of the current state, the same ones hp_run prints.
-struct FrameMetrics {
-    Energy energy;
-    Penetration penetration;
-    ConstraintError error;
-};
-
 // Owns a scene built from a scenario and steps it with the fixed frame dt, exactly as
 // hp_run does, so frame N here is bit-identical to frame N there. Wall time only decides how
 // many steps run per call; it never enters the physics.
@@ -67,8 +58,9 @@ public:
     double last_step_ms() const { return last_step_ms_; }
     double mean_step_ms() const { return mean_step_ms_; }  // exponential moving average
 
+    // Metrics of the current state, the same ones hp_run prints.
     FrameMetrics metrics() const;
-    // FNV-1a over positions then velocities, the same hash hp_run prints.
+    // The engine's state hash, the same one hp_run prints.
     std::uint64_t state_hash() const;
 
 private:

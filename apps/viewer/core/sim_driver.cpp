@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <chrono>
 #include <utility>
-#include <vector>
 
+#include "hp/core/state_hash.hpp"
 #include "hp/solver/xpbd.hpp"
 
 namespace hp::viewer {
@@ -28,15 +28,6 @@ void FixedStepPacer::reset() {
 }
 
 namespace {
-
-template <typename T>
-void fnv1a(std::uint64_t& h, const std::vector<T>& data) {
-    const auto* bytes = reinterpret_cast<const unsigned char*>(data.data());
-    for (size_t i = 0; i < data.size() * sizeof(T); ++i) {
-        h ^= bytes[i];
-        h *= 0x100000001b3ULL;
-    }
-}
 
 bool all_finite(const SimState& s) {
     for (size_t v = 0; v < s.positions.size(); ++v) {
@@ -86,16 +77,10 @@ double SimDriver::sim_time() const {
 
 FrameMetrics SimDriver::metrics() const {
     const XpbdSolver& solver = scene_->solver;
-    return {energy(scene_->state, solver.constraints(), solver.settings().gravity),
-            penetration(scene_->state, solver.colliders()),
-            constraint_error(scene_->state, solver.constraints())};
+    return measure_frame(scene_->state, solver.constraints(), solver.colliders(),
+                         solver.settings().gravity);
 }
 
-std::uint64_t SimDriver::state_hash() const {
-    std::uint64_t h = 0xcbf29ce484222325ULL;
-    fnv1a(h, scene_->state.positions);
-    fnv1a(h, scene_->state.velocities);
-    return h;
-}
+std::uint64_t SimDriver::state_hash() const { return hp::state_hash(scene_->state); }
 
 }  // namespace hp::viewer

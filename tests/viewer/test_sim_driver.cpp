@@ -97,7 +97,7 @@ TEST_CASE("sim driver frames are bit-identical to stepping the scene directly") 
     // Metrics are the engine's own functions on the same state.
     const hp::Energy e = hp::energy(direct.state, direct.solver.constraints(),
                                     direct.solver.settings().gravity);
-    const hp::viewer::FrameMetrics m = driver.metrics();
+    const hp::FrameMetrics m = driver.metrics();
     CHECK(m.energy.kinetic == e.kinetic);
     CHECK(m.energy.gravitational == e.gravitational);
     CHECK(m.energy.elastic == e.elastic);
