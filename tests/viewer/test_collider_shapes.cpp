@@ -61,8 +61,35 @@ TEST_CASE("box corners, faces and edges match the collider") {
         const int axis_bit = e[0] ^ e[1];
         REQUIRE((axis_bit == 1 || axis_bit == 2 || axis_bit == 4));
         const int axis = axis_bit == 1 ? 0 : (axis_bit == 2 ? 1 : 2);
-        const float len = (corners[static_cast<size_t>(e[1])] - corners[static_cast<size_t>(e[0])]).norm();
+        const Vec3 d = corners[static_cast<size_t>(e[1])] - corners[static_cast<size_t>(e[0])];
+        const float len = d.norm();
         CHECK(len == doctest::Approx(2.0f * box.half_extents[axis]).epsilon(1e-5));
     }
     CHECK(distinct.size() == 12);
+}
+
+TEST_CASE("unit sphere triangles lie on the sphere, face outwards and close the surface") {
+    const int rings = 12;
+    const int slices = 16;
+    const std::vector<Vec3> tris = unit_sphere_triangles(rings, slices);
+    REQUIRE(tris.size() % 3 == 0);
+    // Two triangles per quad, minus one degenerate triangle per slice at each pole.
+    CHECK(tris.size() / 3 == static_cast<size_t>(2 * rings * slices - 2 * slices));
+
+    double area = 0.0;
+    for (size_t t = 0; t < tris.size(); t += 3) {
+        const Vec3 cross = (tris[t + 1] - tris[t]).cross(tris[t + 2] - tris[t]);
+        const Vec3 centroid = (tris[t] + tris[t + 1] + tris[t + 2]) / 3.0f;
+        CHECK(cross.dot(centroid) > 0.0f);
+        area += 0.5 * static_cast<double>(cross.norm());
+        for (size_t k = 0; k < 3; ++k) {
+            CHECK(tris[t + k].norm() == doctest::Approx(1.0f).epsilon(1e-5));
+        }
+    }
+    // An inscribed polyhedron is slightly smaller than the sphere (4 pi = 12.566).
+    CHECK(area < 4.0 * 3.14159265358979);
+    CHECK(area > 0.97 * 4.0 * 3.14159265358979);
+
+    CHECK(unit_sphere_triangles(1, 16).empty());
+    CHECK(unit_sphere_triangles(8, 2).empty());
 }

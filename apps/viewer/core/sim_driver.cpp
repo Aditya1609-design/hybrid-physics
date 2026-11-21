@@ -74,8 +74,8 @@ void SimDriver::step() {
     if (!all_finite(scene_->state)) failed_ = true;
 }
 
-int SimDriver::advance(double wall_dt) {
-    const int steps = pacer_.steps_for(wall_dt);
+int SimDriver::advance(double wall_dt, Index frame_limit) {
+    const int steps = std::min(pacer_.steps_for(wall_dt), std::max(0, frame_limit - frame_));
     for (int i = 0; i < steps; ++i) step();
     return steps;
 }

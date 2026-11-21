@@ -10,5 +10,5 @@ target_include_directories(hp_viewer_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(hp_viewer_core PUBLIC hp::engine hp::build_flags)
 
 # Live 3D viewer. raylib is linked here only; the engine stays free of graphics.
-add_executable(hp_view main.cpp)
+add_executable(hp_view main.cpp render.cpp)
 target_link_libraries(hp_view PRIVATE hp_viewer_core raylib)

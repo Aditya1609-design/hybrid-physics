@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <optional>
 
 #include "hp/metrics/constraint_error.hpp"
@@ -51,9 +52,9 @@ public:
 
     // Advances one frame and times it. Does nothing once the state has become non-finite.
     void step();
-    // Advances as many frames as `wall_dt` seconds of real time call for (see FixedStepPacer)
-    // and returns how many were taken.
-    int advance(double wall_dt);
+    // Advances as many frames as `wall_dt` seconds of real time call for (see FixedStepPacer),
+    // never going past frame `frame_limit`, and returns how many were taken.
+    int advance(double wall_dt, Index frame_limit = std::numeric_limits<Index>::max());
     // Rebuilds the scene from the scenario, back to frame 0.
     void reset();
 

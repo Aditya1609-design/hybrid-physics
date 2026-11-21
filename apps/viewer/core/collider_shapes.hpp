@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 
 #include "hp/collision/collider.hpp"
 #include "hp/core/types.hpp"
@@ -23,5 +24,10 @@ const std::array<std::array<int, 4>, 6>& box_faces();
 
 // The 12 edges as corner index pairs.
 const std::array<std::array<int, 2>, 12>& box_edges();
+
+// Unit sphere as a latitude-longitude triangle list (three corners per triangle), wound
+// counter-clockwise seen from outside. Zero-area triangles at the poles are left out.
+// Needs rings >= 2 and slices >= 3; returns an empty list otherwise.
+std::vector<Vec3> unit_sphere_triangles(int rings, int slices);
 
 }  // namespace hp::viewer

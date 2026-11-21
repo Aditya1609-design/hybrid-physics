@@ -105,8 +105,8 @@ OwnerPreview make_owner_preview(const std::vector<Vec3>& rest_positions, Index s
     const float width = hi - lo;
     for (size_t v = 0; v < n; ++v) {
         const float t = width > 0.0f ? (rest_positions[v].x() - lo) / width : 0.0f;
-        const Index s =
-            std::min(static_cast<Index>(t * static_cast<float>(slabs)), static_cast<Index>(slabs - 1));
+        const auto slab = static_cast<Index>(t * static_cast<float>(slabs));
+        const Index s = std::min(slab, static_cast<Index>(slabs - 1));
         p.region_id[v] = s;
         p.solver_owner[v] = (s % 2 == 0) ? SolverId::Xpbd : SolverId::Gnn;
     }

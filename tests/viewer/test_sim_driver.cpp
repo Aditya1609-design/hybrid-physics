@@ -118,6 +118,13 @@ TEST_CASE("sim driver advance takes the pacer's steps, and reset restores frame 
     CHECK(driver.advance(100.0 * dt) == FixedStepPacer::kMaxSteps);
     CHECK(driver.behind());
 
+    // A frame limit stops exactly on that frame even when the pacer asks for more steps.
+    const hp::Index limit = driver.frame() + 2;
+    CHECK(driver.advance(4.0 * dt, limit) == 2);
+    CHECK(driver.frame() == limit);
+    CHECK(driver.advance(4.0 * dt, limit) == 0);
+    CHECK(driver.frame() == limit);
+
     driver.reset();
     CHECK(driver.frame() == 0);
     CHECK_FALSE(driver.behind());
