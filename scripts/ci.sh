@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Local CI: records the machine, builds and tests each preset with warnings as errors,
-# and checks that no build output, datasets or model files are tracked by git.
+# cross-checks recorded trajectories in Python (when .venv has numpy), and checks that no
+# build output, datasets or model files are tracked by git.
 # Usage: scripts/ci.sh [--clean] [--release-only] [--with-debug] [--with-viewer]
 #   --with-viewer  also open the viewer on every scenario in each preset (needs a display;
 #                  run it before a phase review)
@@ -19,7 +20,7 @@ for arg in "$@"; do
         --release-only) release_only=1 ;;
         --with-debug) with_debug=1 ;;
         --with-viewer) with_viewer=1 ;;
-        -h|--help) sed -n '2,6p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
         *) echo "unknown option: $arg" >&2; exit 2 ;;
     esac
 done
@@ -97,6 +98,23 @@ viewer_smoke() {
     return $bad
 }
 
+# Records two runs with hp_run and checks each file against hp_run's own output in Python
+# (ml/tools/check_trajectory.py): a realtime run with contact and a short reference run.
+trajectory_check() {
+    local p="$1" bad=0
+    local run="build/$p/apps/headless_runner/hp_run" py=".venv/bin/python"
+    "$py" ml/tools/check_trajectory.py --hp-run "$run" scenarios/cube_drop.json || bad=1
+    "$py" ml/tools/check_trajectory.py --hp-run "$run" scenarios/cantilever_beam.json \
+        --preset reference --frames 60 || bad=1
+    return $bad
+}
+
+# The Python check needs the project venv with numpy; without it the step is skipped, not failed.
+have_python=0
+if [[ -x .venv/bin/python ]] && .venv/bin/python -c "import numpy" >/dev/null 2>&1; then
+    have_python=1
+fi
+
 if (( clean )); then
     echo "==> removing build/"
     rm -rf build
@@ -109,6 +127,12 @@ for p in "${presets[@]}"; do
     step "configure $p" cmake --preset "$p" -DHP_WARNINGS_AS_ERRORS=ON
     step "build $p" cmake --build --preset "$p"
     step "test $p" ctest --preset "$p"
+    if (( have_python )); then
+        step "trajectory $p" trajectory_check "$p"
+    else
+        echo
+        echo "==> trajectory $p: skipped (no .venv with numpy; see ml/requirements.txt)"
+    fi
     if (( with_viewer )); then
         step "viewer $p" viewer_smoke "$p"
     fi
