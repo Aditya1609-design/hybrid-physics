@@ -15,6 +15,7 @@ add_executable(hp_tests
     core/test_sim_state.cpp
     core/test_state_hash.cpp
     io/test_obj.cpp
+    io/test_trajectory.cpp
     mesh/test_generators.cpp
     mesh/test_graph.cpp
     mesh/test_topology.cpp

@@ -57,7 +57,7 @@ check_tracked_files() {
     while IFS= read -r -d '' f; do
         case "$f" in
             data/MANIFEST.md) ;;
-            build/*|data/*|results/raw/*|*.pt|*.pth|*.onnx|*.bin|*.npz)
+            build/*|data/*|results/raw/*|*.pt|*.pth|*.onnx|*.bin|*.npz|*.hptraj)
                 echo "tracked file should be ignored: $f"; bad=1 ;;
         esac
         if [[ -f "$f" ]]; then

@@ -23,6 +23,8 @@ add_library(hp_engine STATIC
     src/core/state_hash.cpp
     src/core/version.cpp
     src/io/obj.cpp
+    src/io/trajectory_reader.cpp
+    src/io/trajectory_writer.cpp
     src/mesh/generators.cpp
     src/mesh/graph.cpp
     src/mesh/mass.cpp
