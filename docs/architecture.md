@@ -12,15 +12,20 @@ This document grows as phases land. Sections marked *(planned)* are placeholders
                           ^
         +-----------------+------------------+-----------------+
         |                 |                  |                 |
-   hp_tests        headless_runner        viewer          ML bridge
-   (doctest)         (hp_run)        (planned, raylib)  (planned, ONNX
-                                                         Runtime or custom)
+   hp_tests        headless_runner   hp_viewer_core       ML bridge
+   (doctest)         (hp_run)        (no graphics)      (planned, ONNX
+                                          ^              Runtime or custom)
+                                          |
+                                       hp_view
+                                       (raylib)
 ```
 
 - Dependencies point one way: apps, tests and the ML bridge depend on the engine, never the
   reverse.
 - `cmake/DependencyGuard.cmake` enforces this. Configuring fails if `hp_engine` links anything
   other than Eigen, nlohmann/json and `hp::build_flags`.
+- The viewer is optional (`HP_BUILD_VIEWER`, on by default). raylib is linked by `hp_view`
+  only; `hp_viewer_core` is plain C++ on the engine, so its tests run in every build.
 - `hp::build_flags` carries the deterministic floating-point flags and warnings
   (see `decisions/0002-determinism-policy.md`). The engine links it PUBLIC so inline engine code
   compiled inside other targets follows the same rules.
@@ -125,6 +130,25 @@ scenario.json --load_scenario--> Scenario (plain struct: mesh params, material, 
 - Parsing checks everything that needs no mesh. `build_scene` does the geometric checks:
   initial overlap with a collider is an error, and small or thin colliders produce warnings.
 - The engine never prints. Warnings go back in `Scene::warnings` for the app to show.
+
+## Viewer
+
+See `decisions/0008-viewer.md`.
+
+```
+scenario.json -> load_scenario -> SimDriver (owns the Scene, same stepping as hp_run)
+                                      |  advance(wall dt): FixedStepPacer -> 0..4 steps of kFrameDt
+                                      v
+   SimState -> vertex_colors(owner | region | body | plain, or display-only preview)
+            -> build_surface -> CPU Lambert shading -> raylib mesh update -> draw
+   solver.colliders() -> ground grid, translucent spheres and boxes
+   energy, penetration, constraint_error -> stats overlay
+```
+
+- Wall time decides only how many fixed steps run, so the viewer's frame N is bit-identical to
+  `hp_run`'s; `hp_view --frames N` prints the same final state hash.
+- Nothing in the viewer writes to `SimState`; the owner/region preview lives in the viewer's
+  color buffer.
 
 ## Data flow *(planned)*
 

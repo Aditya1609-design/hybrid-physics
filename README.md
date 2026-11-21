@@ -15,8 +15,10 @@ macOS on Apple Silicon, with:
 - Xcode Command Line Tools (Apple clang)
 - CMake 3.20 or newer and Ninja: `brew install cmake ninja`
 
-Everything else (Eigen, doctest, nlohmann/json) is downloaded by CMake on the first configure
-and cached in `.cache/deps/`. After that, the build works offline.
+Everything else (Eigen, doctest, nlohmann/json, and raylib for the viewer) is downloaded by
+CMake on the first configure and cached in `.cache/deps/` (about 55 MB). After that, the build
+works offline. To build without the viewer (for example on a machine without a desktop OpenGL
+stack), configure with `-DHP_BUILD_VIEWER=OFF`.
 
 ## Build and test
 
@@ -54,6 +56,22 @@ final state; the same build on the same compiler gives the same hash on every ru
 ./build/release/apps/headless_runner/hp_run my_scenario.json --check     # validate only
 ```
 
+## Viewer
+
+Runs a scenario live in a window, with the same stepping as `hp_run` (frame N is identical):
+
+```sh
+./build/release/apps/viewer/hp_view scenarios/beam_drape_box.json
+./build/release/apps/viewer/hp_view scenarios/cube_drop.json --preset reference --paused
+./build/release/apps/viewer/hp_view scenarios/cube_drop.json --frames 120   # prints the hash
+./build/release/apps/viewer/hp_view scenarios/cube_drop.json --frames 120 --screenshot shot.png
+```
+
+Mouse: left drag orbits, right drag (or shift + left drag) pans, wheel zooms. Press H in the
+window for all keys: space pause, `.` step, R reset, L reload the file, W solid/wire, T tet
+edges, C color mode (solver owner, region, body, plain), P display-only owner preview,
+V follow the body, F frame the scene, Tab stats panel, F12 screenshot.
+
 ## Benchmarks
 
 XPBD frame time for the real-time and reference presets across mesh sizes (release build):
@@ -78,8 +96,8 @@ python3 -m venv .venv
 
 ```
 engine/     headless static library (include/hp/ public headers, src/ by module)
-apps/       benchmark (XPBD speed), headless_runner (hp_run); viewer in a later phase
-tests/      unit and regression tests, mirroring engine/
+apps/       benchmark (XPBD speed), headless_runner (hp_run), viewer (hp_view, raylib)
+tests/      unit and regression tests, mirroring engine/ (plus tests/viewer)
 scenarios/  JSON scenario files (six examples)
 ml/         Python tools (GNN cost estimate); training and evaluation in later phases
 cmake/      compiler settings, dependency fetching, engine dependency guard
@@ -98,7 +116,7 @@ results/    benchmark summaries, plots and tables
 | 3  | XPBD soft body                          | Approved    |
 | 4  | Collisions                              | Approved    |
 | 5  | Scenario system                         | Approved    |
-| 6  | Viewer                                  | Not started |
+| 6  | Viewer                                  | In review   |
 | 7  | Metrics and recording                   | Not started |
 | 8  | Engine correctness and API freeze       | Not started |
 | 9  | Regions and solver interface            | Not started |
