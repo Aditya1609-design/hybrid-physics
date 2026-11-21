@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
@@ -133,6 +134,64 @@ TEST_CASE("linear momentum is conserved without gravity") {
     const Eigen::Vector3d p1 = linear_momentum(s);
     CHECK((p1 - p0).norm() < 1e-4 * p0.norm());
     for (const hp::Vec3& x : s.positions) CHECK(x.allFinite());
+}
+
+namespace {
+
+// Angular momentum about the origin, in double.
+Eigen::Vector3d angular_momentum(const hp::SimState& s) {
+    Eigen::Vector3d l = Eigen::Vector3d::Zero();
+    for (size_t v = 0; v < s.positions.size(); ++v) {
+        l += s.positions[v].cast<double>().cross(s.velocities[v].cast<double>()) /
+             static_cast<double>(s.inv_mass[v]);
+    }
+    return l;
+}
+
+// Largest relative change in angular momentum over 120 frames of a spinning, jittered beam
+// without gravity, at the given substep count.
+double angular_momentum_drift(hp::Index substeps) {
+    const hp::TetMesh mesh = small_beam();
+    hp::XpbdSettings settings;
+    settings.substeps = substeps;
+    settings.iterations = 1;
+    settings.gravity = hp::Vec3::Zero();
+    hp::Material material;
+    material.edge_compliance = 1e-5f;
+    hp::XpbdSolver solver = make_solver(mesh, material, settings);
+    hp::SimState s = hp::make_state(mesh, material.density);
+    hp::Rng rng(7);
+    const hp::Vec3 omega(0.5f, 2.0f, -1.0f);
+    for (size_t v = 0; v < s.positions.size(); ++v) {
+        const hp::Vec3 jitter(rng.normal(), rng.normal(), rng.normal());
+        s.velocities[v] = hp::Vec3(1.0f, -0.5f, 0.25f) + omega.cross(s.positions[v]) + jitter;
+    }
+    const Eigen::Vector3d l0 = angular_momentum(s);
+    const hp::RegionMask mask = hp::RegionMask::all(s.num_vertices());
+    double worst = 0.0;
+    for (int f = 0; f < 120; ++f) {
+        solver.step(s, mask, hp::kFrameDt);
+        worst = std::max(worst, (angular_momentum(s) - l0).norm() / l0.norm());
+    }
+    return worst;
+}
+
+}  // namespace
+
+// Each projection conserves angular momentum about the predicted positions, but the velocity
+// update dx / h loses a little per substep (a spinning dumbbell keeps 1 / sqrt(1 + w^2 h^2) of
+// it), so the drift is first order in h. Measured: 1.5e-2 at 10 substeps, 7.2e-4 at 256.
+TEST_CASE("angular momentum drift without gravity is first order in the substep") {
+    const double realtime = angular_momentum_drift(hp::XpbdSettings::realtime().substeps);
+    const double doubled = angular_momentum_drift(2 * hp::XpbdSettings::realtime().substeps);
+    const double reference = angular_momentum_drift(hp::XpbdSettings::reference().substeps);
+    MESSAGE("angular momentum drift: realtime " << realtime << ", doubled substeps " << doubled
+                                                << ", reference " << reference);
+    CHECK(realtime < 3e-2);
+    CHECK(reference < 1.5e-3);
+    // Halving the substep about halves the drift (measured ratio 0.56).
+    CHECK(doubled / realtime > 0.4);
+    CHECK(doubled / realtime < 0.65);
 }
 
 TEST_CASE("pinned vertices never move") {
