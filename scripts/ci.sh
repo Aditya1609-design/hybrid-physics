@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Local CI: records the machine, builds and tests each preset with warnings as errors,
 # and checks that no build output, datasets or model files are tracked by git.
-# Usage: scripts/ci.sh [--clean] [--release-only] [--with-debug]
+# Usage: scripts/ci.sh [--clean] [--release-only] [--with-debug] [--with-viewer]
+#   --with-viewer  also open the viewer on every scenario in each preset (needs a display;
+#                  run it before a phase review)
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,12 +12,14 @@ cd "$root"
 clean=0
 release_only=0
 with_debug=0
+with_viewer=0
 for arg in "$@"; do
     case "$arg" in
         --clean) clean=1 ;;
         --release-only) release_only=1 ;;
         --with-debug) with_debug=1 ;;
-        -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
+        --with-viewer) with_viewer=1 ;;
+        -h|--help) sed -n '2,6p' "$0"; exit 0 ;;
         *) echo "unknown option: $arg" >&2; exit 2 ;;
     esac
 done
@@ -66,6 +70,33 @@ check_tracked_files() {
     return $bad
 }
 
+# Runs hp_view on every scenario for a few frames: it must exit cleanly (sanitizer builds
+# abort on any error) and end on the same state hash as hp_run from the same build.
+viewer_smoke() {
+    local p="$1" frames=30 bad=0 f out ref
+    local view="build/$p/apps/viewer/hp_view" run="build/$p/apps/headless_runner/hp_run"
+    if [[ ! -x "$view" ]]; then
+        echo "hp_view is not built for $p (configured with HP_BUILD_VIEWER=OFF?)"
+        return 1
+    fi
+    for f in scenarios/*.json; do
+        if ! out=$("$view" "$f" --frames "$frames" 2>&1); then
+            echo "$f: hp_view failed"
+            echo "$out" | tail -20
+            bad=1
+            continue
+        fi
+        ref=$("$run" "$f" --frames "$frames" 2>/dev/null | grep "final state hash")
+        if [[ "$(grep "final state hash" <<<"$out")" != "$ref" ]]; then
+            echo "$f: final state differs from hp_run"
+            bad=1
+        else
+            echo "$f: ok"
+        fi
+    done
+    return $bad
+}
+
 if (( clean )); then
     echo "==> removing build/"
     rm -rf build
@@ -78,6 +109,9 @@ for p in "${presets[@]}"; do
     step "configure $p" cmake --preset "$p" -DHP_WARNINGS_AS_ERRORS=ON
     step "build $p" cmake --build --preset "$p"
     step "test $p" ctest --preset "$p"
+    if (( with_viewer )); then
+        step "viewer $p" viewer_smoke "$p"
+    fi
 done
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
