@@ -17,6 +17,7 @@ add_executable(hp_tests
     io/test_obj.cpp
     io/test_trajectory.cpp
     mesh/test_generators.cpp
+    mesh/test_mesh_conformity.cpp
     mesh/test_graph.cpp
     mesh/test_topology.cpp
     metrics/test_frame_metrics.cpp
